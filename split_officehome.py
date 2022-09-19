@@ -35,8 +35,10 @@ def move_to_dir(data, source, target):
     check_and_create(target)
     for img in data:
         img_path = os.path.join(source, img)
-        img_path_list.append(img_path)
         shutil.move(img_path, target)
+
+        img_path_target = os.path.join(target, img)
+        img_path_list.append(img_path_target)
 
     return img_path_list
 

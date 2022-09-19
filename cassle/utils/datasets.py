@@ -120,7 +120,7 @@ class OfficeHomeDataset(Dataset):
 
     def __getitem__(self, index):
         path, target = self.imgs[index]
-        img = self._rgb_loader(os.path.join(self.data_root, path))
+        img = self._rgb_loader(path)
 
         if self.transform is not None:
             img = self.transform(img)
