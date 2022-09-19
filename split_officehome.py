@@ -3,6 +3,7 @@ import os
 import random as rand
 import shutil
 
+ROOT = os.path.abspath(os.path.dirname(__file__))
 SOURCE = "cassle/datasets/officehome"
 CLASSES = [
     "Art",
@@ -37,7 +38,7 @@ def move_to_dir(data, source, target):
         img_path = os.path.join(source, img)
         shutil.move(img_path, target)
 
-        img_path_target = os.path.join(target, img)
+        img_path_target = os.path.join(ROOT, target, img)
         img_path_list.append(img_path_target)
 
     return img_path_list

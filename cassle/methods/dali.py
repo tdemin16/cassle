@@ -143,7 +143,7 @@ class PretrainABC(ABC):
 
         # handle custom data by creating the needed pipeline
         dataset = self.extra_args["dataset"]
-        if dataset in ["imagenet100", "imagenet", "domainnet"]:
+        if dataset in ["imagenet100", "imagenet", "domainnet", "officehome"]:
             transform_pipeline = ImagenetTransform
         elif dataset == "custom":
             transform_pipeline = CustomTransform
@@ -268,7 +268,7 @@ class ClassificationABC(ABC):
 
         # handle custom data by creating the needed pipeline
         dataset = self.extra_args["dataset"]
-        if dataset in ["imagenet100", "imagenet", "domainnet"]:
+        if dataset in ["imagenet100", "imagenet", "domainnet", "officehome"]:
             pipeline_class = NormalPipeline
         elif dataset == "custom":
             pipeline_class = CustomNormalPipeline
