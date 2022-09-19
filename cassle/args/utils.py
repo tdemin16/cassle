@@ -8,6 +8,7 @@ N_CLASSES_PER_DATASET = {
     "imagenet": 1000,
     "imagenet100": 100,
     "domainnet": 345,
+    "officehome": 65
 }
 
 
@@ -156,7 +157,7 @@ def additional_setup_pretrain(args: Namespace):
     args.cifar = True if args.dataset in ["cifar10", "cifar100"] else False
 
     if args.dali:
-        assert args.dataset in ["imagenet100", "imagenet", "domainnet", "custom"]
+        assert args.dataset in ["imagenet100", "imagenet", "domainnet", "officehome", "custom"]
 
     args.extra_optimizer_args = {}
     if args.optimizer == "sgd":
