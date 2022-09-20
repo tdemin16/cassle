@@ -2,6 +2,7 @@ import os
 import random
 from pathlib import Path
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Type, Union
+from cassle.utils.datasets import OfficeHomeDataset
 
 import torch
 import torchvision
@@ -656,6 +657,9 @@ def prepare_datasets(
     elif dataset in ["imagenet", "imagenet100"]:
         train_dir = data_dir / train_dir
         dataset = dataset_with_index(ImageFolder)(train_dir, task_transform)
+
+    elif dataset in ["officehome"]:
+        dataset = OfficeHomeDataset(data_dir, split="train", transform=task_transform)
 
     elif dataset == "custom":
         train_dir = data_dir / train_dir

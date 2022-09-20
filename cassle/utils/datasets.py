@@ -70,14 +70,12 @@ class DomainNetDataset(Dataset):
 class OfficeHomeDataset(Dataset):
     def __init__(
         self,
-        data_root,
         image_list_root,
-        domain_names,
+        domain_names=None,
         split="train",
         transform=None,
         return_domain=False,
     ):
-        self.data_root = data_root
         self.transform = transform
         self.domain_names = domain_names
         self.return_domain = return_domain
