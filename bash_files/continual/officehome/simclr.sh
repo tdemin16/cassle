@@ -1,12 +1,12 @@
 python3 main_continual.py \
-    --dataset officehome \
+    --dataset domainnet \
     --encoder resnet18 \
-    --data_dir $DATA_DIR \
+    --data_dir $DATA_DIR/officehome \
     --split_strategy domain \
     --max_epochs 200 \
-    --num_tasks 6 \
+    --num_tasks 4 \
     --task_idx 0 \
-    --gpus 0 \
+    --gpus 0,1,2,3 \
     --accelerator ddp \
     --sync_batchnorm \
     --num_workers 5 \
@@ -24,6 +24,7 @@ python3 main_continual.py \
     --contrast 0.8 \
     --saturation 0.8 \
     --hue 0.2 \
+    --dali \
     --name simclr-officehome \
     --wandb \
     --save_checkpoint \
