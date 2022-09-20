@@ -81,6 +81,8 @@ class OfficeHomeDataset(Dataset):
         self.transform = transform
         self.domain_names = domain_names
         self.return_domain = return_domain
+        self.class_map = {}
+        self.counter = 0
 
         if domain_names is None:
             self.domain_names = [
@@ -99,17 +101,15 @@ class OfficeHomeDataset(Dataset):
 
     def _make_dataset(self, image_list_paths):
         images = []
-        class_map = {}
-        counter = 0
         for image_list_path in image_list_paths:
             image_list = open(image_list_path).readlines()
             for val_ in image_list:
                 val = val_[:-1]
                 target = val.split('/')[4]
-                if target not in class_map.keys():
-                    class_map[target] = counter
-                    counter += 1
-                label = class_map[target]
+                if target not in self.class_map.keys():
+                    self.class_map[target] = self.counter
+                    self.counter += 1
+                label = self.class_map[target]
                 images.append((val, label))
         return images
 
