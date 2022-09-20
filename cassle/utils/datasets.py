@@ -70,30 +70,30 @@ class DomainNetDataset(Dataset):
 class OfficeHomeDataset(Dataset):
     def __init__(
         self,
+        data_root,
         image_list_root,
-        domain_names=None,
+        domain_names,
         split="train",
         transform=None,
         return_domain=False,
     ):
+        self.data_root = data_root
         self.transform = transform
         self.domain_names = domain_names
         self.return_domain = return_domain
-        self.class_map = {}
-        self.counter = 0
 
         if domain_names is None:
             self.domain_names = [
-                "Art",
-                "Clipart",
-                "Product",
-                "Real World"
+                "art",
+                "clipart",
+                "product",
+                "real_world"
             ]
         if not isinstance(domain_names, list):
             self.domain_name = [domain_names]
 
         image_list_paths = [
-            os.path.join(image_list_root, split, d, "dataset.txt") for d in self.domain_names
+            os.path.join(image_list_root, d + "_" + split + ".txt") for d in self.domain_names
         ]
         self.imgs = self._make_dataset(image_list_paths)
 
@@ -101,14 +101,7 @@ class OfficeHomeDataset(Dataset):
         images = []
         for image_list_path in image_list_paths:
             image_list = open(image_list_path).readlines()
-            for val_ in image_list:
-                val = val_[:-1]
-                target = val.split('/')[4]
-                if target not in self.class_map.keys():
-                    self.class_map[target] = self.counter
-                    self.counter += 1
-                label = self.class_map[target]
-                images.append((val, label))
+            images += [(val.split()[0], int(val.split()[1])) for val in image_list]
         return images
 
     def _rgb_loader(self, path):
@@ -118,7 +111,7 @@ class OfficeHomeDataset(Dataset):
 
     def __getitem__(self, index):
         path, target = self.imgs[index]
-        img = self._rgb_loader(path)
+        img = self._rgb_loader(os.path.join(self.data_root, path))
 
         if self.transform is not None:
             img = self.transform(img)

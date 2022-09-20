@@ -658,9 +658,6 @@ def prepare_datasets(
         train_dir = data_dir / train_dir
         dataset = dataset_with_index(ImageFolder)(train_dir, task_transform)
 
-    elif dataset in ["officehome"]:
-        dataset = OfficeHomeDataset(data_dir, split="train", transform=task_transform)
-
     elif dataset == "custom":
         train_dir = data_dir / train_dir
 
