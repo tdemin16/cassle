@@ -241,7 +241,7 @@ def prepare_datasets(
             data_root=data_dir,
             image_list_root=data_dir,
             domain_names=None,
-            split="test",
+            split="val",
             transform=T_val,
             return_domain=True,
         )

@@ -1,7 +1,7 @@
 python3 main_continual.py \
-    --dataset domainnet \
+    --dataset officehome \
     --encoder resnet18 \
-    --data_dir $DATA_DIR/officehome \
+    --data_dir $DATA_DIR \
     --split_strategy domain \
     --max_epochs 200 \
     --num_tasks 4 \
