@@ -195,7 +195,7 @@ class NormalPipeline(Pipeline):
         self.device = device
         self.validation = validation
 
-        if dataset == "domainnet":
+        if dataset == "domainnet" or dataset == "officehome":
             data = []
             domain_files = [
                 data_path / f for f in os.listdir(data_path) if f.endswith(".txt") and "train" in f
@@ -561,7 +561,7 @@ class PretrainPipeline(Pipeline):
             labels = [-1] * len(files)
             data = map(list, zip(files, labels))
 
-        elif dataset == "domainnet":
+        elif dataset == "domainnet" or dataset == "officehome":
             data = []
             domain_files = [
                 data_path / f
