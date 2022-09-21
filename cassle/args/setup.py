@@ -50,6 +50,9 @@ def parse_args_pretrain() -> argparse.Namespace:
     if temp_args.distiller:
         parser = DISTILLERS[temp_args.distiller]().add_model_specific_args(parser)
 
+    # add tiny arg
+    parser.add_argument("--tiny", action="store_true")
+
     # add checkpoint and auto umap args
     parser.add_argument("--pretrained_model", type=str, default=None)
     parser.add_argument("--save_checkpoint", action="store_true")

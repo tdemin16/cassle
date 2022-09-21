@@ -78,14 +78,22 @@ class LinearModel(pl.LightningModule):
         self.tasks = tasks
         self.domain = domain
 
-        self.domains = [
-            "real",
-            "quickdraw",
-            "painting",
-            "sketch",
-            "infograph",
-            "clipart",
-        ]
+        if "dataset" in kwargs.keys() and kwargs["dataset"] == "officehome":
+            self.domains = [
+                "art",
+                "clipart",
+                "product",
+                "real_world"
+            ]
+        else:
+            self.domains = [
+                "real",
+                "quickdraw",
+                "painting",
+                "sketch",
+                "infograph",
+                "clipart",
+            ]
 
         # all the other parameters
         self.extra_args = kwargs

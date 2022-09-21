@@ -129,14 +129,22 @@ class BaseModel(pl.LightningModule):
         self.num_tasks = num_tasks
         self.split_strategy = split_strategy
 
-        self.domains = [
-            "real",
-            "quickdraw",
-            "painting",
-            "sketch",
-            "infograph",
-            "clipart",
-        ]
+        if "dataset" in kwargs.keys() and kwargs["dataset"] == "officehome":
+            self.domains = [
+                "art",
+                "clipart",
+                "product",
+                "real_world"
+            ]
+        else:
+            self.domains = [
+                "real",
+                "quickdraw",
+                "painting",
+                "sketch",
+                "infograph",
+                "clipart",
+            ]
 
         # sanity checks on multicrop
         if self.multicrop:
