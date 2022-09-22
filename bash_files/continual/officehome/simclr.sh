@@ -19,7 +19,7 @@ python3 main_continual.py \
     --scheduler warmup_cosine \
     --lr 0.4 \
     --weight_decay 1e-4 \
-    --batch_size 64 \
+    --batch_size 256 \
     --brightness 0.8 \
     --contrast 0.8 \
     --saturation 0.8 \

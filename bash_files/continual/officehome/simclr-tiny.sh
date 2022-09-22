@@ -10,7 +10,7 @@ python3 main_continual.py \
     --accelerator ddp \
     --sync_batchnorm \
     --num_workers 5 \
-    --precision 16 \
+    --precision 512 \
     --optimizer sgd \
     --lars \
     --grad_clip_lars \

@@ -1,5 +1,6 @@
 import os
 from pprint import pprint
+from time import time
 import types
 
 import torch
@@ -214,11 +215,14 @@ def main():
 
     model.current_task_idx = args.task_idx
 
+    start_time = time()
+
     if args.dali:
         trainer.fit(model, val_dataloaders=val_loader)
     else:
         trainer.fit(model, train_loaders, val_loader)
 
+    print(f"Training Lasted: {time() - start_time}")
 
 if __name__ == "__main__":
     main()
