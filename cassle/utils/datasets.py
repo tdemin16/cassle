@@ -118,7 +118,7 @@ class OfficeHomeDataset(Dataset):
 
         domain = None
         if self.return_domain:
-            domain = [d for d in self.domain_names if d in path]
+            domain = [d for d in self.domain_names if d in path.split('/')]
             assert len(domain) == 1
             domain = domain[0]
 
