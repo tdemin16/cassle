@@ -29,7 +29,7 @@ python3 main_continual.py \
     --wandb \
     --save_checkpoint \
     --entity tdemin \
-    --project ever-learn \
+    --project tiny-cassle \
     --method simclr \
     --temperature 0.2 \
     --proj_hidden_dim 2048 \

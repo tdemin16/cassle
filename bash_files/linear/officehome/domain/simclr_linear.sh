@@ -17,7 +17,7 @@ python3 main_linear.py \
     --dali \
     --name simclr-officehome_all-linear-eval \
     --pretrained_feature_extractor $PRETRAINED_PATH \
-    --project ever-learn \
+    --project tiny-cassle \
     --entity tdemin \
     --wandb \
     --save_checkpoint
@@ -42,7 +42,7 @@ python3 main_linear.py \
     --dali \
     --name simclr-officehome_art-linear-eval \
     --pretrained_feature_extractor $PRETRAINED_PATH \
-    --project ever-learn \
+    --project tiny-cassle \
     --entity tdemin \
     --wandb \
     --save_checkpoint
@@ -67,7 +67,7 @@ python3 main_linear.py \
     --dali \
     --name simclr-officehome_clipart-linear-eval \
     --pretrained_feature_extractor $PRETRAINED_PATH \
-    --project ever-learn \
+    --project tiny-cassle \
     --entity tdemin \
     --wandb \
     --save_checkpoint
@@ -92,7 +92,7 @@ python3 main_linear.py \
     --dali \
     --name simclr-officehome_product-linear-eval \
     --pretrained_feature_extractor $PRETRAINED_PATH \
-    --project ever-learn \
+    --project tiny-cassle \
     --entity tdemin \
     --wandb \
     --save_checkpoint
@@ -117,7 +117,7 @@ python3 main_linear.py \
     --dali \
     --name simclr-officehome_realworld-linear-eval \
     --pretrained_feature_extractor $PRETRAINED_PATH \
-    --project ever-learn \
+    --project tiny-cassle \
     --entity tdemin \
     --wandb \
     --save_checkpoint
