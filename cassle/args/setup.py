@@ -99,6 +99,9 @@ def parse_args_linear() -> argparse.Namespace:
     # linear model
     parser = METHODS["linear"].add_model_specific_args(parser)
 
+    # add tiny arg
+    parser.add_argument("--tiny", action="store_true")
+
     # THIS LINE IS KEY TO PULL WANDB
     temp_args, _ = parser.parse_known_args()
 
