@@ -10,7 +10,7 @@ python3 main_continual.py \
     --accelerator ddp \
     --sync_batchnorm \
     --num_workers 5 \
-    --precision 512 \
+    --precision 16 \
     --optimizer sgd \
     --lars \
     --grad_clip_lars \
@@ -19,7 +19,7 @@ python3 main_continual.py \
     --scheduler warmup_cosine \
     --lr 0.4 \
     --weight_decay 1e-4 \
-    --batch_size 64 \
+    --batch_size 512 \
     --brightness 0.8 \
     --contrast 0.8 \
     --saturation 0.8 \

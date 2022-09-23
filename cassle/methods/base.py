@@ -172,7 +172,12 @@ class BaseModel(pl.LightningModule):
 
         # initialize encoder
         self.encoder = self.base_model(zero_init_residual=zero_init_residual)
-        self.features_dim = self.encoder.inplanes
+
+        if self.extra_args["tiny"]:
+            self.encoder.layer4 = nn.Identity()
+
+        self.features_dim = self.encoder.inplanes if not self.extra_args["tiny"] \
+                                                  else self.encoder.inplanes // 2
         # remove fc layer
         self.encoder.fc = nn.Identity()
         if cifar:
