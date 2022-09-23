@@ -98,8 +98,10 @@ class LinearModel(pl.LightningModule):
         # all the other parameters
         self.extra_args = kwargs
 
-        for param in self.backbone.parameters():
-            param.requires_grad = False
+        # Freeze param. If tiny and layer4, leave them active
+        for name, param in self.backbone.named_parameters():
+            if not (self.extra_args["tiny"] and "layer4" in name):
+                param.requires_grad = False
 
     @staticmethod
     def add_model_specific_args(parent_parser: ArgumentParser) -> ArgumentParser:
