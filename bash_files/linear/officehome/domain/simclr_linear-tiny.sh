@@ -15,7 +15,7 @@ python3 main_linear.py \
     --batch_size 256 \
     --num_workers 2 \
     --dali \
-    --name simclr-officehome_all-linear-eval \
+    --name simclr-officehome_all-tiny-linear-eval \
     --pretrained_feature_extractor $PRETRAINED_PATH \
     --project ever-learn \
     --entity tdemin \
@@ -41,7 +41,7 @@ python3 main_linear.py \
     --batch_size 256 \
     --num_workers 7 \
     --dali \
-    --name simclr-officehome_art-linear-eval \
+    --name simclr-officehome_art-tiny-linear-eval \
     --pretrained_feature_extractor $PRETRAINED_PATH \
     --project ever-learn \
     --entity tdemin \
@@ -67,7 +67,7 @@ python3 main_linear.py \
     --batch_size 256 \
     --num_workers 7 \
     --dali \
-    --name simclr-officehome_clipart-linear-eval \
+    --name simclr-officehome_clipart-tiny-linear-eval \
     --pretrained_feature_extractor $PRETRAINED_PATH \
     --project ever-learn \
     --entity tdemin \
@@ -93,7 +93,7 @@ python3 main_linear.py \
     --batch_size 256 \
     --num_workers 7 \
     --dali \
-    --name simclr-officehome_product-linear-eval \
+    --name simclr-officehome_product-tiny-linear-eval \
     --pretrained_feature_extractor $PRETRAINED_PATH \
     --project ever-learn \
     --entity tdemin \
@@ -119,7 +119,7 @@ python3 main_linear.py \
     --batch_size 256 \
     --num_workers 7 \
     --dali \
-    --name simclr-officehome_realworld-linear-eval \
+    --name simclr-officehome_realworld-tiny-linear-eval \
     --pretrained_feature_extractor $PRETRAINED_PATH \
     --project tiny-cassle \
     --entity tdemin \

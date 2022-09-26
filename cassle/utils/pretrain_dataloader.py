@@ -2,7 +2,6 @@ import os
 import random
 from pathlib import Path
 from typing import Any, Callable, Iterable, List, Optional, Sequence, Type, Union
-from cassle.utils.datasets import OfficeHomeDataset
 
 import torch
 import torchvision
