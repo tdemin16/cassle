@@ -19,13 +19,13 @@ python3 main_continual.py \
     --scheduler warmup_cosine \
     --lr 0.4 \
     --weight_decay 1e-4 \
-    --batch_size 256 \
+    --batch_size 512 \
     --brightness 0.8 \
     --contrast 0.8 \
     --saturation 0.8 \
     --hue 0.2 \
     --dali \
-    --name simclr-officehome-contrastive \
+    --name simclr-officehome-contrastive-tiny \
     --wandb \
     --save_checkpoint \
     --entity tdemin \
