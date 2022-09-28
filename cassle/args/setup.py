@@ -50,8 +50,9 @@ def parse_args_pretrain() -> argparse.Namespace:
     if temp_args.distiller:
         parser = DISTILLERS[temp_args.distiller]().add_model_specific_args(parser)
 
-    # add tiny arg
-    parser.add_argument("--tiny", action="store_true")
+    # add tiny args
+    parser.add_argument("--tiny_size", type=int, default=-1)
+    parser.add_argument("--tiny_architecture", action="store_true")
 
     # add checkpoint and auto umap args
     parser.add_argument("--pretrained_model", type=str, default=None)
@@ -100,7 +101,7 @@ def parse_args_linear() -> argparse.Namespace:
     parser = METHODS["linear"].add_model_specific_args(parser)
 
     # add tiny arg
-    parser.add_argument("--tiny", action="store_true")
+    parser.add_argument("--tiny_architecture", action="store", choices=["train4", "omit4"])
 
     # THIS LINE IS KEY TO PULL WANDB
     temp_args, _ = parser.parse_known_args()

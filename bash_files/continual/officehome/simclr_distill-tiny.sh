@@ -37,4 +37,5 @@ python3 main_continual.py \
     --disable_knn_eval \
     --distiller contrastive \
     --pretrained_model $PRETRAINED_PATH \
-    --tiny
+    --tiny_size 56 \
+    --tiny_architecture

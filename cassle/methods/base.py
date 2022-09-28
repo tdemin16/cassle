@@ -173,11 +173,11 @@ class BaseModel(pl.LightningModule):
         # initialize encoder
         self.encoder = self.base_model(zero_init_residual=zero_init_residual)
 
-        if self.extra_args["tiny"]:
-            print("[Tiny CaSSLe]")
+        if self.extra_args["tiny_architecture"]:
+            print("[Tiny CaSSLe - Architecture]")
             self.encoder.layer4 = nn.Identity()
 
-        self.features_dim = self.encoder.inplanes if not self.extra_args["tiny"] \
+        self.features_dim = self.encoder.inplanes if not self.extra_args["tiny_architecture"] \
                                                   else self.encoder.inplanes // 2
         # remove fc layer
         self.encoder.fc = nn.Identity()

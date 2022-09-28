@@ -21,7 +21,7 @@ python3 main_linear.py \
     --entity tdemin \
     --wandb \
     --save_checkpoint \
-    --tiny
+    --tiny omit4
 
 # art
 python3 main_linear.py \
@@ -47,7 +47,7 @@ python3 main_linear.py \
     --entity tdemin \
     --wandb \
     --save_checkpoint \
-    --tiny
+    --tiny_architecture
 
 # clipart
 python3 main_linear.py \
@@ -73,7 +73,7 @@ python3 main_linear.py \
     --entity tdemin \
     --wandb \
     --save_checkpoint \
-    --tiny
+    --tiny_architecture
 
 # product
 python3 main_linear.py \
@@ -99,7 +99,7 @@ python3 main_linear.py \
     --entity tdemin \
     --wandb \
     --save_checkpoint \
-    --tiny
+    --tiny_architecture
 
 # reak_world
 python3 main_linear.py \
@@ -125,5 +125,5 @@ python3 main_linear.py \
     --entity tdemin \
     --wandb \
     --save_checkpoint \
-    --tiny
+    --tiny_architecture
     

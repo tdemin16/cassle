@@ -61,6 +61,11 @@ class LinearModel(pl.LightningModule):
         super().__init__()
 
         self.backbone = backbone
+        if kwargs["tiny"] == "omit4":
+            print("[Tiny CaSSLe - Omit layer 4]")
+            self.backbone.layer4 = nn.Identity()
+            self.backbone.inplanes = self.backbone.inplanes // 2
+
         self.classifier = nn.Linear(self.backbone.inplanes, num_classes)  # type: ignore
 
         # training related
@@ -98,9 +103,12 @@ class LinearModel(pl.LightningModule):
         # all the other parameters
         self.extra_args = kwargs
 
+        if self.extra_args["tiny"] == "train4":
+            print("[Tiny CaSSLe - Train layer 4]")
+
         # Freeze param. If tiny and layer4, leave them active
         for name, param in self.backbone.named_parameters():
-            if not (self.extra_args["tiny"] and "layer4" in name):
+            if not (self.extra_args["tiny"] == "train4" and "layer4" in name):
                 param.requires_grad = False
 
     @staticmethod
