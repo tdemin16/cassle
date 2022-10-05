@@ -25,7 +25,7 @@ python3 main_continual.py \
     --saturation 0.8 \
     --hue 0.2 \
     --dali \
-    --name simclr-officehome-contrastive-tiny \
+    --name simclr-officehome-contrastive \
     --wandb \
     --save_checkpoint \
     --entity tdemin \

@@ -170,8 +170,11 @@ def main():
 
     # wandb logging
     if args.wandb:
+        arch = "" if not args.tiny_architecture else "-smallarch"
+        wandb_size = "" if args.tiny_size == -1 else f"-{args.tiny_size}"
+        wandb_name = f"{args.name}{wandb_size}{arch}-task{args.task_idx}"
         wandb_logger = WandbLogger(
-            name=f"{args.name}-task{args.task_idx}",
+            name=wandb_name,
             project=args.project,
             entity=args.entity,
             offline=args.offline,

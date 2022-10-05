@@ -85,8 +85,10 @@ def main():
 
     # wandb logging
     if args.wandb:
+        arch = "" if args.tiny is None else f"-{args.tiny}"
+        wandb_name = f"{args.name}{arch}"
         wandb_logger = WandbLogger(
-            name=args.name, project=args.project, entity=args.entity, offline=args.offline
+            name=wandb_name, project=args.project, entity=args.entity, offline=args.offline
         )
         wandb_logger.watch(model, log="gradients", log_freq=100)
         wandb_logger.log_hyperparams(args)
