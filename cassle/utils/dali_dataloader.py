@@ -344,6 +344,8 @@ class ImagenetTransform:
         # tiny cassle
         if extra_args is not None and extra_args["tiny_size"] != -1:
             print(f"[Tiny CaSSLe - Size {extra_args['tiny_size']}]")
+            # get the same proportion as for the default/input size and min_scale
+            min_scale = min_scale * size / extra_args["tiny_size"] 
             size = extra_args["tiny_size"]
 
         # random crop
