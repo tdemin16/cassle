@@ -206,35 +206,44 @@ def main():
             frequency=args.auto_umap_frequency,
         )
         callbacks.append(auto_umap)
-
-    trainer = Trainer.from_argparse_args(
-        args,
-        logger=wandb_logger if args.wandb else None,
-        callbacks=callbacks,
-        checkpoint_callback=False,
-        terminate_on_nan=True,
-    )
-
+    
     model.current_task_idx = args.task_idx
 
     start_time = time()
+    if not args.curricular:
+        trainer = Trainer.from_argparse_args(
+            args,
+            logger=wandb_logger if args.wandb else None,
+            callbacks=callbacks,
+            checkpoint_callback=False,
+            terminate_on_nan=True,
+        )
 
-    if args.dali:
-        if args.curricular:
-            max_epochs = model.max_epochs
-            ep_perc = [30, 35, 35]
-            ep_scheduler = [max_epochs * p // 100 for p in ep_perc]
-            ep_scheduler[-1] += max_epochs - sum(ep_scheduler)
-
-            for i in range(3):
-                model.curr_stage[0] = i
-                model.max_epochs = ep_scheduler[i]
-                trainer.fit(model, val_dataloaders=val_loader)
-        else:
+        if args.dali:
             trainer.fit(model, val_dataloaders=val_loader)
+        else:
+            trainer.fit(model, train_loaders, val_loader)
+    
+    elif args.curricular and args.dali:
+        max_epochs = model.max_epochs
+        ep_perc = [30, 35, 35]
+        ep_scheduler = [max_epochs * p // 100 for p in ep_perc]
+        ep_scheduler[-1] += max_epochs - sum(ep_scheduler)
 
-    else:
-        trainer.fit(model, train_loaders, val_loader)
+        for i in range(3):
+            trainer = Trainer.from_argparse_args(
+                args,
+                max_epochs=ep_scheduler[i],
+                logger=wandb_logger if args.wandb else None,
+                callbacks=callbacks,
+                checkpoint_callback=False,
+                terminate_on_nan=True,
+            )
+
+            model.curr_stage[0] = i
+            model.max_epochs = ep_scheduler[i]
+            trainer.fit(model, val_dataloaders=val_loader)
+        
 
     print(f"Training Lasted: {time() - start_time}")
 
