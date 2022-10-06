@@ -59,6 +59,7 @@ class BaseModel(pl.LightningModule):
         lr_decay_steps: Sequence = None,
         disable_knn_eval: bool = True,
         knn_k: int = 20,
+        epochs_scheduler = None,
         **kwargs,
     ):
         """Base model that implements all basic operations for all self-supervised methods.
@@ -128,8 +129,12 @@ class BaseModel(pl.LightningModule):
         self.tasks = tasks
         self.num_tasks = num_tasks
         self.split_strategy = split_strategy
-        # wrapped to list in order to be dynamic during the execution
-        self.curr_stage = [2] 
+        self.epoch_scheduler = epochs_scheduler
+
+        if self.epoch_scheduler is not None \
+        and isinstance(self.epoch_scheduler, list) \
+        and len(self.epoch_scheduler) > 1:
+            self.curr_stage = [0]
 
         if "dataset" in kwargs.keys() and kwargs["dataset"] == "officehome":
             self.domains = [
@@ -414,6 +419,8 @@ class BaseModel(pl.LightningModule):
         Returns:
             Dict[str, Any]: dict with the classification loss, features and logits
         """
+        if self.current_epoch == self.epoch_scheduler[self.curr_stage]:
+            self.curr_stage += 1
 
         _, X_task, _ = batch[f"task{self.current_task_idx}"]
         X_task = [X_task] if isinstance(X_task, torch.Tensor) else X_task
