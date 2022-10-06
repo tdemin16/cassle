@@ -322,8 +322,7 @@ class ImagenetTransform:
         solarization_prob: float = 0.0,
         size: int = 224,
         min_scale: float = 0.08,
-        max_scale: float = 1.0,
-        extra_args: dict = None
+        max_scale: float = 1.0
     ):
         """Applies Imagenet transformations to a batch of images.
 
@@ -341,12 +340,9 @@ class ImagenetTransform:
             min_scale (float, optional): minimum scale of the crops. Defaults to 0.08.
             max_scale (float, optional): maximum scale of the crops. Defaults to 1.0.
         """
-        # tiny cassle
-        if extra_args is not None and extra_args["tiny_size"] != -1:
-            print(f"[Tiny CaSSLe - Size {extra_args['tiny_size']}]")
-            # get the same proportion as for the default/input size and min_scale
-            min_scale = min_scale * size / extra_args["tiny_size"] 
-            size = extra_args["tiny_size"]
+        print(f"[CaSSLe - Size {size}]")
+        # 224 * 0.08 = 17.92 -> set min_scale in order to maintain this ratio
+        min_scale = 17.92 / size
 
         # random crop
         self.random_crop = ops.RandomResizedCrop(

@@ -164,7 +164,6 @@ class PretrainABC(ABC):
                     size=size,
                     min_scale=min_scale,
                     max_scale=max_scale,
-                    extra_args=self.extra_args,
                 )
                 transforms.append(transform)
             train_pipeline = MulticropPretrainPipeline(
@@ -193,16 +192,13 @@ class PretrainABC(ABC):
                         device=dali_device,
                         **kwargs,
                         max_scale=1.0,
-                        extra_args=self.extra_args,
                     )
                     for kwargs in transform_kwargs
                 ]
             else:
                 transform = transform_pipeline(
                     device=dali_device,
-                    **transform_kwargs,
-                    max_scale=1.0,
-                    extra_args=self.extra_args,
+                    max_scale=1.0
                 )
 
             train_pipeline = PretrainPipeline(
