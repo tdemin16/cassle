@@ -226,9 +226,13 @@ def main():
     
     elif args.curricular and args.dali:
         max_epochs = model.max_epochs
+        
         ep_perc = [30, 35, 35]
         ep_scheduler = [max_epochs * p // 100 for p in ep_perc]
         ep_scheduler[-1] += max_epochs - sum(ep_scheduler)
+
+        model.epoch_scheduler = ep_scheduler
+        model.curr_stage = [0]
         
         trainer.fit(model, val_dataloaders=val_loader)
         
