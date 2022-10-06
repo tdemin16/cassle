@@ -198,7 +198,8 @@ class PretrainABC(ABC):
             else:
                 transform = transform_pipeline(
                     device=dali_device,
-                    max_scale=1.0
+                    max_scale=1.0,
+                    **transform_kwargs
                 )
 
             train_pipeline = PretrainPipeline(
