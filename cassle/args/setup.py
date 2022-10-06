@@ -53,6 +53,9 @@ def parse_args_pretrain() -> argparse.Namespace:
     # add tiny args
     parser.add_argument("--tiny_architecture", action="store_true")
 
+    # add curricular learning argument (1 == no curricular learning)
+    parser.add_argument("--curricular", action="store_true")
+
     # add checkpoint and auto umap args
     parser.add_argument("--pretrained_model", type=str, default=None)
     parser.add_argument("--save_checkpoint", action="store_true")

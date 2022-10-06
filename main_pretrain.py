@@ -220,7 +220,13 @@ def main():
     start_time = time()
 
     if args.dali:
-        trainer.fit(model, val_dataloaders=val_loader)
+        if args.curricular:
+            for i in range(3):
+                model.curr_stage[0] = i
+                trainer.fit(model, val_dataloaders=val_loader)
+        else:
+            trainer.fit(model, val_dataloaders=val_loader)
+
     else:
         trainer.fit(model, train_loaders, val_loader)
 

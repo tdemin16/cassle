@@ -36,4 +36,5 @@ python3 main_continual.py \
     --check_val_every_n_epoch 9999 \
     --disable_knn_eval \
     --size 56 \
-    --tiny_architecture 
+    --tiny_architecture \
+    --stages 3

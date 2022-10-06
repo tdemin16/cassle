@@ -128,6 +128,8 @@ class BaseModel(pl.LightningModule):
         self.tasks = tasks
         self.num_tasks = num_tasks
         self.split_strategy = split_strategy
+        # wrapped to list in order to be dynamic during the execution
+        self.curr_stage = [2] 
 
         if "dataset" in kwargs.keys() and kwargs["dataset"] == "officehome":
             self.domains = [

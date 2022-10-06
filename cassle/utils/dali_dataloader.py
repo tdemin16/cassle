@@ -322,7 +322,8 @@ class ImagenetTransform:
         solarization_prob: float = 0.0,
         size: int = 224,
         min_scale: float = 0.08,
-        max_scale: float = 1.0
+        max_scale: float = 1.0,
+        curr_stage: Sequence[int] = [2]
     ):
         """Applies Imagenet transformations to a batch of images.
 
@@ -340,6 +341,9 @@ class ImagenetTransform:
             min_scale (float, optional): minimum scale of the crops. Defaults to 0.08.
             max_scale (float, optional): maximum scale of the crops. Defaults to 1.0.
         """
+        assert len(curr_stage) == 1
+        self.curr_stage = curr_stage
+
         print(f"[CaSSLe - Size {size}]")
         # 224 * 0.08 = 17.92 -> set min_scale in order to maintain this ratio
         min_scale = 17.92 / size
@@ -396,11 +400,15 @@ class ImagenetTransform:
 
     def __call__(self, images):
         out = self.random_crop(images)
-        out = self.random_color_jitter(out)
-        out = self.random_grayscale(out)
-        out = self.random_gaussian_blur(out)
-        out = self.random_solarization(out)
-        out = self.cmn(out, mirror=self.coin05())
+        
+        if self.curr_stage[0] > 0:
+            out = self.random_color_jitter(out)
+            out = self.random_grayscale(out)
+        
+        if self.curr_stage[0] > 1:
+            out = self.random_gaussian_blur(out)
+            out = self.random_solarization(out)
+            out = self.cmn(out, mirror=self.coin05())
         return out
 
 

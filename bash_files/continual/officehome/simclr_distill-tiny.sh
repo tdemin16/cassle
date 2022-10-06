@@ -38,4 +38,5 @@ python3 main_continual.py \
     --distiller contrastive \
     --pretrained_model $PRETRAINED_PATH \
     --size 56 \
-    --tiny_architecture
+    --tiny_architecture \
+    --stages 3 
