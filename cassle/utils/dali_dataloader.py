@@ -408,7 +408,8 @@ class ImagenetTransform:
         if self.curr_stage[0] > 1:
             out = self.random_gaussian_blur(out)
             out = self.random_solarization(out)
-            out = self.cmn(out, mirror=self.coin05())
+        
+        out = self.cmn(out, mirror=self.coin05())
         return out
 
 

@@ -37,4 +37,4 @@ python3 main_continual.py \
     --disable_knn_eval \
     --size 56 \
     --tiny_architecture \
-    --stages 3
+    --curricular

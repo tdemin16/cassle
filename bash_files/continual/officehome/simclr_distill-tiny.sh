@@ -39,4 +39,4 @@ python3 main_continual.py \
     --pretrained_model $PRETRAINED_PATH \
     --size 56 \
     --tiny_architecture \
-    --stages 3 
+    --curricular
