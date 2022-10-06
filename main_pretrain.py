@@ -221,8 +221,14 @@ def main():
 
     if args.dali:
         if args.curricular:
+            max_epochs = model.max_epochs
+            ep_perc = [30, 35, 35]
+            ep_scheduler = [max_epochs * p // 100 for p in ep_perc]
+            ep_scheduler[-1] += max_epochs - sum(ep_scheduler)
+
             for i in range(3):
                 model.curr_stage[0] = i
+                model.max_epochs = ep_scheduler[i]
                 trainer.fit(model, val_dataloaders=val_loader)
         else:
             trainer.fit(model, val_dataloaders=val_loader)
