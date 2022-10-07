@@ -88,7 +88,7 @@ dependencies:
     - joblib==1.1.0
     - lightning-bolts==0.5.0
     - multidict==6.0.2
-    - nvidia-dali-cuda110==1.16.1
+    - nvidia-dali-cuda110==1.16.0
     - oauthlib==3.2.1
     - pathtools==0.1.2
     - pillow==6.1.0

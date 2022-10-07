@@ -218,13 +218,13 @@ def main():
     model.current_task_idx = args.task_idx
 
     start_time = time()
-    if not args.curricular:
+    if not args.curriculum:
         if args.dali:
             trainer.fit(model, val_dataloaders=val_loader)
         else:
             trainer.fit(model, train_loaders, val_loader)
     
-    elif args.curricular and args.dali:
+    elif args.curriculum and args.dali:
         max_epochs = model.max_epochs
         
         ep_perc = [30, 35, 35]

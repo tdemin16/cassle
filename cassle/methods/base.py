@@ -60,7 +60,7 @@ class BaseModel(pl.LightningModule):
         disable_knn_eval: bool = True,
         knn_k: int = 20,
         epochs_scheduler=None,
-        curr_stage=[2]
+        curr_stage=[2],
         **kwargs,
     ):
         """Base model that implements all basic operations for all self-supervised methods.
@@ -373,7 +373,7 @@ class BaseModel(pl.LightningModule):
             torch.Tensor: features extracted by the encoder.
         """
 
-        return {"feats": self.encoder(X)}
+        return {"feats": self.encoder(X).type(torch.float32)}
 
     def _online_eval_shared_step(self, X: torch.Tensor, targets) -> Dict:
         """Forwards a batch of images X and computes the classification loss, the logits, the
@@ -417,8 +417,20 @@ class BaseModel(pl.LightningModule):
             Dict[str, Any]: dict with the classification loss, features and logits
         """
         curr_stage = self.curr_stage[0]
-        if self.current_epoch == self.epoch_scheduler[curr_stage]:
-            self.curr_stage += 1
+        # Criteria met
+        if self.epoch_scheduler is not None \
+        and self.current_epoch + 1 == sum(self.epoch_scheduler[:curr_stage+1]) \
+        and curr_stage < len(self.epoch_scheduler) - 1:
+            # increase stage counter
+            self.curr_stage[0] += 1
+            # get key of current dataloader
+            ks = list(self.trainer.train_dataloader.sampler.keys())[0]
+            # create new dataloader
+            tl = self.train_dataloader()
+            # get its key
+            kl = list(tl.keys())[0]
+            # replace dataloader in correct position
+            self.trainer.train_dataloader.sampler[ks] = tl[kl]
 
         _, X_task, _ = batch[f"task{self.current_task_idx}"]
         X_task = [X_task] if isinstance(X_task, torch.Tensor) else X_task

@@ -6,7 +6,7 @@ python3 main_continual.py \
     --max_epochs 200 \
     --num_tasks 4 \
     --task_idx 1 \
-    --gpus 0 \
+    --gpus 0,1 \
     --accelerator ddp \
     --sync_batchnorm \
     --num_workers 5 \
@@ -39,4 +39,4 @@ python3 main_continual.py \
     --pretrained_model $PRETRAINED_PATH \
     --size 56 \
     --tiny_architecture \
-    --curricular
+    --curriculum

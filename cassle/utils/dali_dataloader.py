@@ -344,7 +344,6 @@ class ImagenetTransform:
         assert len(curr_stage) == 1
         self.curr_stage = curr_stage
 
-        print(f"[CaSSLe - Size {size}]")
         # 224 * 0.08 = 17.92 -> set min_scale in order to maintain this ratio
         min_scale = 17.92 / size
 
