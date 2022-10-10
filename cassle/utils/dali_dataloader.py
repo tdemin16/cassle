@@ -323,7 +323,8 @@ class ImagenetTransform:
         size: int = 224,
         min_scale: float = 0.08,
         max_scale: float = 1.0,
-        extra_args: dict = None
+        extra_args: dict = None,
+        curr_stage: int = 2
     ):
         """Applies Imagenet transformations to a batch of images.
 
@@ -341,6 +342,9 @@ class ImagenetTransform:
             min_scale (float, optional): minimum scale of the crops. Defaults to 0.08.
             max_scale (float, optional): maximum scale of the crops. Defaults to 1.0.
         """
+        assert curr_stage in [0, 1, 2]
+        self.curr_stage = curr_stage
+
         # random crop
         self.random_crop = ops.RandomResizedCrop(
             device=device,
@@ -393,10 +397,17 @@ class ImagenetTransform:
 
     def __call__(self, images):
         out = self.random_crop(images)
-        out = self.random_color_jitter(out)
-        out = self.random_grayscale(out)
-        out = self.random_gaussian_blur(out)
-        out = self.random_solarization(out)
+
+        if self.curr_stage >= 1:
+            print("1")
+            out = self.random_color_jitter(out)
+            out = self.random_grayscale(out)
+        
+        if self.curr_stage == 2:
+            print("2")
+            out = self.random_gaussian_blur(out)
+            out = self.random_solarization(out)
+
         out = self.cmn(out, mirror=self.coin05())
         return out
 

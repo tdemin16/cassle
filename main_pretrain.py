@@ -219,10 +219,25 @@ def main():
 
     start_time = time()
 
-    if args.dali:
+    if not args.curriculum:
+        if args.dali:
+            trainer.fit(model, val_dataloaders=val_loader)
+        else:
+            trainer.fit(model, train_loaders, val_loader)
+    
+    elif args.curriculum and args.dali:
+        print("[CaSSLe - Curriculum Learning]")
+        max_ep = model.max_epochs
+        curr_schedule = [30, 35, 35]
+
+        # Assign number of epochs proportional to schedule
+        ep_schedule = [sch * max_ep // 100 for sch in curr_schedule]
+        ep_schedule[-1] += max_ep - sum(ep_schedule)
+
+        model.ep_schedule = ep_schedule
+        model.curr_stage = 0
+
         trainer.fit(model, val_dataloaders=val_loader)
-    else:
-        trainer.fit(model, train_loaders, val_loader)
 
     print(f"Training Lasted: {time() - start_time}")
 

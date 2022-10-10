@@ -59,6 +59,8 @@ class BaseModel(pl.LightningModule):
         lr_decay_steps: Sequence = None,
         disable_knn_eval: bool = True,
         knn_k: int = 20,
+        ep_schedule: list = None,
+        curr_stage = 2,
         **kwargs,
     ):
         """Base model that implements all basic operations for all self-supervised methods.
@@ -128,6 +130,8 @@ class BaseModel(pl.LightningModule):
         self.tasks = tasks
         self.num_tasks = num_tasks
         self.split_strategy = split_strategy
+        self.ep_schedule = ep_schedule
+        self.curr_stage = curr_stage
 
         if "dataset" in kwargs.keys() and kwargs["dataset"] == "officehome":
             self.domains = [
@@ -412,6 +416,20 @@ class BaseModel(pl.LightningModule):
         Returns:
             Dict[str, Any]: dict with the classification loss, features and logits
         """
+        # Enter if a schedule is defined and the next epoch requires the next stage
+        # the third condition prevents the condition to become true on the last iteration
+        if self.ep_schedule is not None \
+        and self.current_epoch + 1 == sum(self.ep_schedule[:self.curr_stage+1]) \
+        and self.curr_stage < len(self.ep_schedule) - 1:
+            assert len(self.trainer.train_dataloader.sampler.keys()) == 1, f"Dataloader keys: {len(self.trainer.train_dataloader.sampler.keys())}"
+            self.curr_stage += 1
+            new_dl = self.train_dataloader()
+            
+            key_old = list(self.trainer.train_dataloader.sampler.keys())[0]
+            key_new = list(new_dl.keys())[0]
+
+            self.trainer.train_dataloader.sampler[key_old] = new_dl[key_new]
+
 
         _, X_task, _ = batch[f"task{self.current_task_idx}"]
         X_task = [X_task] if isinstance(X_task, torch.Tensor) else X_task
