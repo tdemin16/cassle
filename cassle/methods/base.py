@@ -131,7 +131,7 @@ class BaseModel(pl.LightningModule):
         self.num_tasks = num_tasks
         self.split_strategy = split_strategy
         self.epoch_scheduler = epochs_scheduler
-        self.curr_stage = [2]
+        self.curr_stage = curr_stage
 
         if "dataset" in kwargs.keys() and kwargs["dataset"] == "officehome":
             self.domains = [
