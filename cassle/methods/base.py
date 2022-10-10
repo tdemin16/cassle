@@ -368,7 +368,7 @@ class BaseModel(pl.LightningModule):
         Returns:
             torch.Tensor: features extracted by the encoder.
         """
-
+        
         return {"feats": self.encoder(X)}
 
     def _online_eval_shared_step(self, X: torch.Tensor, targets) -> Dict:

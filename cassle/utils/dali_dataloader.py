@@ -341,11 +341,6 @@ class ImagenetTransform:
             min_scale (float, optional): minimum scale of the crops. Defaults to 0.08.
             max_scale (float, optional): maximum scale of the crops. Defaults to 1.0.
         """
-        # tiny cassle
-        if extra_args is not None and extra_args["tiny_size"] != -1:
-            print(f"[Tiny CaSSLe - Size {extra_args['tiny_size']}]")
-            size = extra_args["tiny_size"]
-
         # random crop
         self.random_crop = ops.RandomResizedCrop(
             device=device,

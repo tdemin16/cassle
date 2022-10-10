@@ -29,7 +29,7 @@ python3 main_continual.py \
     --wandb \
     --save_checkpoint \
     --entity tdemin \
-    --project tiny-cassle \
+    --project ever-learn \
     --method simclr \
     --temperature 0.2 \
     --proj_hidden_dim 2048 \
@@ -37,5 +37,5 @@ python3 main_continual.py \
     --disable_knn_eval \
     --distiller contrastive \
     --pretrained_model $PRETRAINED_PATH \
-    --tiny_size 56 \
+    --size 56 \
     --tiny_architecture

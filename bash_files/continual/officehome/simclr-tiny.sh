@@ -29,11 +29,11 @@ python3 main_continual.py \
     --wandb \
     --save_checkpoint \
     --entity tdemin \
-    --project tiny-cassle \
+    --project ever-learn \
     --method simclr \
     --temperature 0.2 \
     --proj_hidden_dim 2048 \
     --check_val_every_n_epoch 9999 \
     --disable_knn_eval \
-    --tiny_size 56 \
+    --size 56 \
     --tiny_architecture 

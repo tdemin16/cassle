@@ -51,7 +51,6 @@ def parse_args_pretrain() -> argparse.Namespace:
         parser = DISTILLERS[temp_args.distiller]().add_model_specific_args(parser)
 
     # add tiny args
-    parser.add_argument("--tiny_size", type=int, default=-1)
     parser.add_argument("--tiny_architecture", action="store_true")
 
     # add checkpoint and auto umap args
