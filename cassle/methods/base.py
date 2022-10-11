@@ -578,8 +578,6 @@ class BaseModel(pl.LightningModule):
             self.backup_layer4 = deepcopy(self.encoder.layer4)
             self.encoder.layer4 = nn.Identity()
             self.curriculum_projection = nn.Linear(128, self.features_dim).cuda()
-        
-        print(self.encoder)
 
     def next_stage(self):
         assert self.curr_stage in [0, 1]
@@ -588,7 +586,6 @@ class BaseModel(pl.LightningModule):
             self._update_stage_tiny()
         else:
             self._update_stage_full()
-        print(self.encoder)
             
     def _update_stage_tiny(self):
         # 1 -> 2
