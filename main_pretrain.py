@@ -235,7 +235,7 @@ def main():
         ep_schedule[-1] += max_ep - sum(ep_schedule)
 
         model.ep_schedule = ep_schedule
-        model.curr_stage = 0
+        model.initial_stage()
 
         trainer.fit(model, val_dataloaders=val_loader)
 

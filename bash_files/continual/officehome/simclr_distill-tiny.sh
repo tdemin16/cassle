@@ -37,5 +37,5 @@ python3 main_continual.py \
     --disable_knn_eval \
     --distiller contrastive \
     --pretrained_model $PRETRAINED_PATH \
-    --size 56 \
-    --tiny_architecture
+    --size 112 \
+    --curriculum

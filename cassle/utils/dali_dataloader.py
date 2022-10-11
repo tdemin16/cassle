@@ -399,12 +399,10 @@ class ImagenetTransform:
         out = self.random_crop(images)
 
         if self.curr_stage >= 1:
-            print("1")
             out = self.random_color_jitter(out)
             out = self.random_grayscale(out)
         
         if self.curr_stage == 2:
-            print("2")
             out = self.random_gaussian_blur(out)
             out = self.random_solarization(out)
 
