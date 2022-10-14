@@ -171,7 +171,8 @@ def main():
     # wandb logging
     if args.wandb:
         arch = "" if not args.tiny_architecture else "-smallarch"
-        wandb_name = f"{args.name}-{args.size}{arch}-task{args.task_idx}"
+        curr = "" if not args.curriculum else "-curriculum"
+        wandb_name = f"{args.name}-{args.size}{arch}{curr}-task{args.task_idx}"
         wandb_logger = WandbLogger(
             name=wandb_name,
             project=args.project,

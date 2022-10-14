@@ -397,7 +397,7 @@ class ImagenetTransform:
 
     def __call__(self, images):
         out = self.random_crop(images)
-
+        
         if self.curr_stage >= 1:
             out = self.random_color_jitter(out)
             out = self.random_grayscale(out)

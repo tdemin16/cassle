@@ -375,12 +375,7 @@ class BaseModel(pl.LightningModule):
         Returns:
             torch.Tensor: features extracted by the encoder.
         """
-        if self.ep_schedule is None:
-            return {"feats": self.encoder(X)}
-        else:
-            return {
-                "feats": self.curriculum_projection(self.encoder(X))
-            }
+        return {"feats": self.encoder(X)}
         
 
     def _online_eval_shared_step(self, X: torch.Tensor, targets) -> Dict:
@@ -572,12 +567,11 @@ class BaseModel(pl.LightningModule):
             # training is performed 2-by-2
             self.backup_layer2 = deepcopy(self.encoder.layer2)
             self.encoder.layer2 = nn.Identity()
-            self.curriculum_projection = nn.Linear(64, self.features_dim).cuda()
         else:
             # with full architecture 3 blocks are trained at each stage
             self.backup_layer4 = deepcopy(self.encoder.layer4)
             self.encoder.layer4 = nn.Identity()
-            self.curriculum_projection = nn.Linear(128, self.features_dim).cuda()
+
 
     def next_stage(self):
         assert self.curr_stage in [0, 1]
@@ -586,6 +580,7 @@ class BaseModel(pl.LightningModule):
             self._update_stage_tiny()
         else:
             self._update_stage_full()
+
             
     def _update_stage_tiny(self):
         # 1 -> 2
@@ -595,7 +590,6 @@ class BaseModel(pl.LightningModule):
             self._set_requires_grad(self.encoder.bn1)
 
             self.encoder.layer2 = self.backup_layer2
-            self.curriculum_projection = nn.Linear(128, self.features_dim).cuda()
 
         # 2 -> 3
         if self.curr_stage-1 == 1:
@@ -603,7 +597,7 @@ class BaseModel(pl.LightningModule):
             self._set_requires_grad(self.encoder.layer1)
 
             self.encoder.layer3 = self.backup_layer3
-            self.curriculum_projection = nn.Linear(256, self.features_dim).cuda()
+
     
     def _update_stage_full(self):
         # 1 -> 2
@@ -612,14 +606,13 @@ class BaseModel(pl.LightningModule):
             self._set_requires_grad(self.encoder.bn1)
 
             self.encoder.layer3 = self.backup_layer3
-            self.curriculum_projection = nn.Linear(256, self.features_dim).cuda()
 
         # 2-> 3
         if self.curr_stage-1 == 1:
             self._set_requires_grad(self.encoder.layer1)
 
             self.encoder.layer4 = self.backup_layer4
-            self.curriculum_projection = nn.Linear(512, self.features_dim).cuda()
+            
 
     def _set_requires_grad(self, layer, status=False):
         assert type(status) == bool

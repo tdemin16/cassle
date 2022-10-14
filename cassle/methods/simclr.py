@@ -30,12 +30,13 @@ class SimCLR(BaseModel):
 
         self.temperature = temperature
         self.supervised = supervised
+        self.proj_hidden_dim = proj_hidden_dim
 
         # projector
         self.projector = nn.Sequential(
-            nn.Linear(self.features_dim, proj_hidden_dim),
+            nn.Linear(self.features_dim, self.proj_hidden_dim),
             nn.ReLU(),
-            nn.Linear(proj_hidden_dim, output_dim),
+            nn.Linear(self.proj_hidden_dim, output_dim),
         )
 
     @staticmethod
@@ -167,3 +168,13 @@ class SimCLR(BaseModel):
 
         out.update({"loss": out["loss"] + nce_loss, "z": [z1, z2]})
         return out
+
+    def initial_stage(self):
+        super().initial_stage()
+        in_features = 64 if self.tiny_architecture else 128
+        self.projector[0] = nn.Linear(in_features, self.proj_hidden_dim).cuda()
+
+    def next_stage(self):
+        super().next_stage()
+        in_features = self.projector[0].in_features * 2
+        self.projector[0] = nn.Linear(in_features, self.proj_hidden_dim).cuda()
