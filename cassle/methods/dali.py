@@ -164,7 +164,6 @@ class PretrainABC(ABC):
                     size=size,
                     min_scale=min_scale,
                     max_scale=max_scale,
-                    extra_args=self.extra_args,
                     curr_stage=self.curr_stage
                 )
                 transforms.append(transform)
@@ -194,7 +193,6 @@ class PretrainABC(ABC):
                         device=dali_device,
                         **kwargs,
                         max_scale=1.0,
-                        extra_args=self.extra_args,
                         curr_stage=self.curr_stage
                     )
                     for kwargs in transform_kwargs
@@ -204,7 +202,6 @@ class PretrainABC(ABC):
                     device=dali_device,
                     **transform_kwargs,
                     max_scale=1.0,
-                    extra_args=self.extra_args,
                     curr_stage=self.curr_stage
                 )
 

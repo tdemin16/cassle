@@ -323,7 +323,6 @@ class ImagenetTransform:
         size: int = 224,
         min_scale: float = 0.08,
         max_scale: float = 1.0,
-        extra_args: dict = None,
         curr_stage: int = 2
     ):
         """Applies Imagenet transformations to a batch of images.
