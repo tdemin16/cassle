@@ -285,16 +285,36 @@ class BaseModel(pl.LightningModule):
             List[Dict[str, Any]]:
                 list of dicts containing learnable parameters and possible settings.
         """
+        if self.ep_schedule is not None:
+            if self.tiny_architecture:
+                # insert layer2 in optimizer params (initially identity)
+                named_param = [{"name": "layer2."+name, "params":params} for name, params in self.backup_layer2.named_parameters()]
+            else:
+                # insert layer4 in optimizer params (initially identity)
+                named_param = [{"name": "layer4."+name, "params":params} for name, params in self.backup_layer4.named_parameters()]
 
-        return [
-            {"name": "encoder", "params": self.encoder.parameters()},
-            {
-                "name": "classifier",
-                "params": self.classifier.parameters(),
-                "lr": self.classifier_lr,
-                "weight_decay": 0,
-            },
-        ]
+            # contains: conv1, bn1, layer1 + layer2 if full architecture
+            lp = [{"name": name, "params": params} for name, params in self.encoder.named_parameters()]
+            lp.extend(named_param)
+            # layer3 always needed
+            lp.extend([{"name": "layer3."+name, "params":params} for name, params in self.backup_layer3.named_parameters()])
+            lp.append({
+                    "name": "classifier",
+                    "params": self.classifier.parameters(),
+                    "lr": self.classifier_lr,
+                    "weight_decay": 0,
+            })
+            return lp
+        else:    
+            return [
+                {"name": "encoder", "params": self.encoder.parameters()},
+                {
+                    "name": "classifier",
+                    "params": self.classifier.parameters(),
+                    "lr": self.classifier_lr,
+                    "weight_decay": 0,
+                },
+            ]
 
     def configure_optimizers(self) -> Tuple[List, List]:
         """Collects learnable parameters and configures the optimizer and learning rate scheduler.
@@ -339,7 +359,7 @@ class BaseModel(pl.LightningModule):
                 scheduler = LinearWarmupCosineAnnealingLR(
                     optimizer,
                     warmup_epochs=self.warmup_epochs,
-                    max_epochs=self.max_epochs,
+                    max_epochs=self.max_epochs if self.ep_schedule is None else self.max_epochs // 3,
                     warmup_start_lr=self.warmup_start_lr,
                     eta_min=self.min_lr,
                 )
@@ -419,21 +439,6 @@ class BaseModel(pl.LightningModule):
         Returns:
             Dict[str, Any]: dict with the classification loss, features and logits
         """
-        # Enter if a schedule is defined and the next epoch requires the next stage
-        # the third condition prevents the condition to become true on the last iteration
-        if self.ep_schedule is not None \
-        and self.current_epoch + 1 == sum(self.ep_schedule[:self.curr_stage+1]) \
-        and self.curr_stage < len(self.ep_schedule) - 1:
-            assert len(self.trainer.train_dataloader.sampler.keys()) == 1, f"Dataloader keys: {len(self.trainer.train_dataloader.sampler.keys())}"
-            self.next_stage()
-            
-            new_dl = self.train_dataloader()
-            
-            key_old = list(self.trainer.train_dataloader.sampler.keys())[0]
-            key_new = list(new_dl.keys())[0]
-
-            self.trainer.train_dataloader.sampler[key_old] = new_dl[key_new]
-
         _, X_task, _ = batch[f"task{self.current_task_idx}"]
         X_task = [X_task] if isinstance(X_task, torch.Tensor) else X_task
 
@@ -473,6 +478,27 @@ class BaseModel(pl.LightningModule):
             return {**outs_task, **outs_online_eval, **{"loss": loss}}
         else:
             return {**outs_task, "loss": 0}
+
+    def training_step_end(self, batch_parts):
+        super().training_step_end()
+        # Enter if a schedule is defined and the next epoch requires the next stage
+        # the third condition prevents the condition to become true on the last iteration
+        if self.ep_schedule is not None \
+        and self.current_epoch + 1 == sum(self.ep_schedule[:self.curr_stage+1]) \
+        and self.curr_stage < len(self.ep_schedule) - 1:
+            assert len(self.trainer.train_dataloader.sampler.keys()) == 1, f"Dataloader keys: {len(self.trainer.train_dataloader.sampler.keys())}"
+            self.next_stage()
+            
+            # get dl for next stage
+            new_dl = self.train_dataloader()
+            
+            key_old = list(self.trainer.train_dataloader.sampler.keys())[0]
+            key_new = list(new_dl.keys())[0]
+
+            # subst dl
+            self.trainer.train_dataloader.sampler[key_old] = new_dl[key_new]
+
+        return batch_parts
 
     def validation_step(self, batch: List[torch.Tensor], batch_idx: int) -> Dict[str, Any]:
         """Validation step for pytorch lightning. It does all the shared operations, such as
@@ -554,28 +580,38 @@ class BaseModel(pl.LightningModule):
 
             self.log_dict(log, sync_dist=True)
 
+
     def initial_stage(self):
         assert self.ep_schedule is not None, "Update stage is available only in Curriculum learning."
         self.curr_stage = 0
         # store backup for layers in order not to loose the learned representations
-        self.backup_layer3 = deepcopy(self.encoder.layer3)
+        self.backup_layer3 = self.encoder.layer3
         # use an Identity layer to avoid computation
         self.encoder.layer3 = nn.Identity()
 
         if self.tiny_architecture:
             # in tiny architecture layer4 is omitted,
             # training is performed 2-by-2
-            self.backup_layer2 = deepcopy(self.encoder.layer2)
+            self.backup_layer2 = self.encoder.layer2
             self.encoder.layer2 = nn.Identity()
         else:
             # with full architecture 3 blocks are trained at each stage
-            self.backup_layer4 = deepcopy(self.encoder.layer4)
+            self.backup_layer4 = self.encoder.layer4
             self.encoder.layer4 = nn.Identity()
 
 
     def next_stage(self):
         assert self.curr_stage in [0, 1]
         self.curr_stage += 1
+        if self.curr_stage-1 == 0:
+            # stop trining first conv
+            self._set_requires_grad(self.encoder.conv1)
+            self._set_requires_grad(self.encoder.bn1)
+
+        elif self.curr_stage-1 == 1:
+            # stop training first conv block
+            self._set_requires_grad(self.encoder.layer1)
+
         if self.tiny_architecture:
             self._update_stage_tiny()
         else:
@@ -585,39 +621,42 @@ class BaseModel(pl.LightningModule):
     def _update_stage_tiny(self):
         # 1 -> 2
         if self.curr_stage-1 == 0:
-            # stop trining first conv
-            self._set_requires_grad(self.encoder.conv1)
-            self._set_requires_grad(self.encoder.bn1)
-
             self.encoder.layer2 = self.backup_layer2
-
+            self._set_lr("layer2", self.lr)
         # 2 -> 3
         if self.curr_stage-1 == 1:
-            # stop training first conv block
-            self._set_requires_grad(self.encoder.layer1)
-
             self.encoder.layer3 = self.backup_layer3
+            self._set_lr("layer3", self.lr)
 
     
     def _update_stage_full(self):
         # 1 -> 2
         if self.curr_stage-1 == 0:
-            self._set_requires_grad(self.encoder.conv1)
-            self._set_requires_grad(self.encoder.bn1)
-
             self.encoder.layer3 = self.backup_layer3
-
+            self._set_lr("layer3", self.lr)
         # 2-> 3
         if self.curr_stage-1 == 1:
-            self._set_requires_grad(self.encoder.layer1)
-
             self.encoder.layer4 = self.backup_layer4
+            self._set_lr("layer4", self.lr)
             
 
     def _set_requires_grad(self, layer, status=False):
         assert type(status) == bool
         for param in layer.parameters():
             param.requires_grad = status
+
+    
+    def _set_lr(self, group_name, lr):
+        for group in self.trainer.optimizers[0].optim.param_groups:
+            if "name" in group.keys() and group['name'].startswith(group_name):
+                group['lr'] = lr
+
+
+    def _print_param_groups(self):
+        for group in self.trainer.optimizers[0].optim.param_groups:
+            if "name" in group.keys():
+                print(group['name'], group['lr'])
+                
 
 
 class BaseMomentumModel(BaseModel):

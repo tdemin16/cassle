@@ -39,6 +39,12 @@ class SimCLR(BaseModel):
             nn.Linear(self.proj_hidden_dim, output_dim),
         )
 
+        if self.ep_schedule is not None:
+            in_features = 64 if self.tiny_architecture else 128
+            self.stage_0_proj = nn.Linear(in_features, self.proj_hidden_dim)
+            self.stage_1_proj = nn.Linear(in_features*2, self.proj_hidden_dim)
+            self.stage_2_proj = self.projector[0]
+
     @staticmethod
     def add_model_specific_args(parent_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         parent_parser = super(SimCLR, SimCLR).add_model_specific_args(parent_parser)
@@ -62,8 +68,27 @@ class SimCLR(BaseModel):
         Returns:
             List[dict]: list of learnable parameters.
         """
+        if self.ep_schedule is not None:
+            extra_learnable_params = [
+                {"name": "stage.0."+name, "params": params} \
+                for name, params in self.stage_0_proj.named_parameters()
+            ]
+            extra_learnable_params.extend([
+                {"name": "stage.1."+name, "params": params} \
+                for name, params in self.stage_1_proj.named_parameters()
+            ])
+            extra_learnable_params.extend([
+                {"name": "stage.2."+name, "params": params} \
+                for name, params in self.stage_2_proj.named_parameters()
+            ])
+            extra_learnable_params.extend([
+                {"name": "projector."+name, "params": params} \
+                for name, params in self.projector[2].named_parameters()
+            ])
+            
+        else:
+            extra_learnable_params = [{"params": self.projector.parameters()}]
 
-        extra_learnable_params = [{"params": self.projector.parameters()}]
         return super().learnable_params + extra_learnable_params
 
     def forward(self, X: torch.tensor, *args, **kwargs) -> Dict[str, Any]:
@@ -169,12 +194,17 @@ class SimCLR(BaseModel):
         out.update({"loss": out["loss"] + nce_loss, "z": [z1, z2]})
         return out
 
+    
     def initial_stage(self):
         super().initial_stage()
-        in_features = 64 if self.tiny_architecture else 128
-        self.projector[0] = nn.Linear(in_features, self.proj_hidden_dim).cuda()
+        self.projector[0] = self.stage_0_proj
+
 
     def next_stage(self):
         super().next_stage()
-        in_features = self.projector[0].in_features * 2
-        self.projector[0] = nn.Linear(in_features, self.proj_hidden_dim).cuda()
+        if self.curr_stage == 1:
+            self.projector[0] = self.stage_1_proj
+            self._set_lr("stage.1", self.lr)
+        else:
+            self.projector[0] = self.stage_2_proj
+            self._set_lr("stage.2", self.lr)
