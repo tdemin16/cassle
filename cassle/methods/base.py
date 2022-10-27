@@ -173,19 +173,18 @@ class BaseModel(pl.LightningModule):
             self.warmup_start_lr = self.warmup_start_lr * self.accumulate_grad_batches
 
         assert encoder in ["resnet18", "resnet50"]
-        from torchvision.models import resnet18, resnet50
-
-        self.base_model = {"resnet18": resnet18, "resnet50": resnet50}[encoder]
+        if not self.tiny_architecture:
+            from torchvision.models import resnet18, resnet50
+            self.base_model = {"resnet18": resnet18, "resnet50": resnet50}[encoder]
+        else:
+            from cassle.methods.custom_resnet import custom_resnet18, custom_resnet50
+            print("[Tiny CaSSLe - Architecture]")
+            self.base_model = {"resnet18": custom_resnet18, "resnet50": custom_resnet50}[encoder]
 
         # initialize encoder
         self.encoder = self.base_model(zero_init_residual=zero_init_residual)
 
-        if self.tiny_architecture:
-            print("[Tiny CaSSLe - Architecture]")
-            self.encoder.layer4 = nn.Identity()
-
-        self.features_dim = self.encoder.inplanes if not self.tiny_architecture \
-                                                  else self.encoder.inplanes // 2
+        self.features_dim = self.encoder.inplanes
         # remove fc layer
         self.encoder.fc = nn.Identity()
         if cifar:
