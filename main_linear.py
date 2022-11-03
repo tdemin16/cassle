@@ -35,9 +35,9 @@ def main():
         tasks = torch.randperm(args.num_classes).chunk(args.num_tasks)
 
     if args.encoder == "resnet18":
-        backbone = resnet18() if self.tiny != "omit4" else custom_resnet18()
+        backbone = resnet18() if args.tiny != "omit4" else custom_resnet18()
     elif args.encoder == "resnet50":
-        backbone = resnet50() if self.tiny != "omit4" else custom_resnet18()
+        backbone = resnet50() if args.tiny != "omit4" else custom_resnet18()
     else:
         raise ValueError("Only [resnet18, resnet50] are currently supported.")
 

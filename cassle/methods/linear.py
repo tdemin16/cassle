@@ -61,10 +61,6 @@ class LinearModel(pl.LightningModule):
         super().__init__()
 
         self.backbone = backbone
-        if kwargs["tiny"] == "omit4":
-            print("[Tiny CaSSLe - Omit layer 4]")
-            self.backbone.layer4 = nn.Identity()
-            self.backbone.inplanes = self.backbone.inplanes // 2
 
         self.classifier = nn.Linear(self.backbone.inplanes, num_classes)  # type: ignore
 
