@@ -101,6 +101,8 @@ class LinearModel(pl.LightningModule):
 
         if self.extra_args["tiny"] == "train4":
             print("[Tiny CaSSLe - Train layer 4]")
+        elif self.extra_args["tiny"] == "omit4":
+            print("[Tiny CaSSLe - Omit layer 4]")
 
         # Freeze param. If tiny and layer4, leave them active
         for name, param in self.backbone.named_parameters():
