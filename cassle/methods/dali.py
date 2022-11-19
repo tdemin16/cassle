@@ -11,6 +11,7 @@ from cassle.utils.dali_dataloader import (
     CustomTransform,
     ImagenetTransform,
     MulticropPretrainPipeline,
+    MulticropPretrainPipeline2,
     NormalPipeline,
     PretrainPipeline,
 )
@@ -143,7 +144,7 @@ class PretrainABC(ABC):
 
         # handle custom data by creating the needed pipeline
         dataset = self.extra_args["dataset"]
-        if dataset in ["imagenet100", "imagenet", "domainnet", "officehome"]:
+        if dataset in ["imagenet100", "imagenet", "domainnet", "officehome", "digits"]:
             transform_pipeline = ImagenetTransform
         elif dataset == "custom":
             transform_pipeline = CustomTransform
@@ -167,7 +168,7 @@ class PretrainABC(ABC):
                     curr_stage=self.curr_stage
                 )
                 transforms.append(transform)
-            train_pipeline = MulticropPretrainPipeline(
+            train_pipeline = MulticropPretrainPipeline2(
                 data_dir,
                 batch_size=self.batch_size,
                 transforms=transforms,
@@ -179,6 +180,13 @@ class PretrainABC(ABC):
                 num_threads=num_workers,
                 no_labels=self.extra_args["no_labels"],
                 encode_indexes_into_labels=self.encode_indexes_into_labels,
+                split_strategy=self.split_strategy,
+                tasks=self.tasks,
+                task_idx=self.current_task_idx,
+                num_tasks=self.num_tasks,
+                dataset=dataset,
+                domain=self.domains[self.current_task_idx],
+                train_test="train",
             )
             output_map = [
                 *[f"large{i}" for i in range(num_crops[0])],
@@ -271,7 +279,7 @@ class ClassificationABC(ABC):
 
         # handle custom data by creating the needed pipeline
         dataset = self.extra_args["dataset"]
-        if dataset in ["imagenet100", "imagenet", "domainnet", "officehome"]:
+        if dataset in ["imagenet100", "imagenet", "domainnet", "officehome", "digits"]:
             pipeline_class = NormalPipeline
         elif dataset == "custom":
             pipeline_class = CustomNormalPipeline

@@ -210,6 +210,7 @@ def main():
 
     trainer = Trainer.from_argparse_args(
         args,
+        accumulate_grad_batches={0: 1, 10: 2},
         logger=wandb_logger if args.wandb else None,
         callbacks=callbacks,
         checkpoint_callback=False,
@@ -219,7 +220,6 @@ def main():
     model.current_task_idx = args.task_idx
 
     start_time = time()
-
     if not args.curriculum:
         if args.dali:
             trainer.fit(model, val_dataloaders=val_loader)

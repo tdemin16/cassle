@@ -178,6 +178,8 @@ class SimCLR(BaseModel):
             else:
                 nce_loss = simclr_loss_func(z1, z2, temperature=self.temperature)
 
+            z = [z1, z2]
+
         # compute number of extra positives
         n_positives = (
             (pos_mask != 0).sum().float()
@@ -191,7 +193,7 @@ class SimCLR(BaseModel):
         }
         self.log_dict(metrics, on_epoch=True, sync_dist=True)
 
-        out.update({"loss": out["loss"] + nce_loss, "z": [z1, z2]})
+        out.update({"loss": out["loss"] + nce_loss, "z": z})
         return out
 
     
