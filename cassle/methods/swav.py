@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Sequence
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from cassle.losses.swav import swav_loss_func, swav_loss_func_mc
+from cassle.losses.swav import swav_loss_func
 from cassle.methods.base import BaseModel
 from cassle.utils.sinkhorn_knopp import SinkhornKnopp
 
@@ -106,7 +106,7 @@ class SwAV(BaseModel):
             self.register_buffer(
                 "queue",
                 torch.zeros(
-                    self.num_crops+self.num_small_crops,
+                    2,
                     self.queue_size // world_size,
                     self.output_dim,
                     device=self.device,
@@ -164,56 +164,33 @@ class SwAV(BaseModel):
         Returns:
             torch.Tensor: total loss composed of SwAV loss and classification loss.
         """
-        if not self.multicrop:
-            out = super().training_step(batch, batch_idx)
-            feats1, feats2 = out["feats"]
 
-            z1 = self.projector(feats1)
-            z2 = self.projector(feats2)
-            z1_norm = F.normalize(z1)
-            z2_norm = F.normalize(z2)
+        out = super().training_step(batch, batch_idx)
+        feats1, feats2 = out["feats"]
 
-            p1 = self.prototypes(z1_norm)
-            p2 = self.prototypes(z2_norm)
+        z1 = self.projector(feats1)
+        z2 = self.projector(feats2)
+        z1_norm = F.normalize(z1)
+        z2_norm = F.normalize(z2)
 
-            # ------- swav loss -------
-            preds = [p1, p2]
-            assignments = self.get_assignments(preds)
-            swav_loss = swav_loss_func(preds, assignments, self.temperature)
+        p1 = self.prototypes(z1_norm)
+        p2 = self.prototypes(z2_norm)
 
-            # ------- update queue -------
-            if self.queue_size > 0:
-                z = torch.stack((z1_norm, z2_norm))
-                self.queue[:, z.size(1) :] = self.queue[:, : -z.size(1)].clone()
-                self.queue[:, : z.size(1)] = z.detach()
+        # ------- swav loss -------
+        preds = [p1, p2]
+        assignments = self.get_assignments(preds)
+        swav_loss = swav_loss_func(preds, assignments, self.temperature)
 
-            self.log("train_swav_loss", swav_loss, on_epoch=True, sync_dist=True)
+        # ------- update queue -------
+        if self.queue_size > 0:
+            z = torch.stack((z1_norm, z2_norm))
+            self.queue[:, z.size(1) :] = self.queue[:, : -z.size(1)].clone()
+            self.queue[:, : z.size(1)] = z.detach()
 
-            out.update({"loss": out["loss"] + swav_loss, "z": [z1, z2], "p": [p1, p2]})
-            return out
+        self.log("train_swav_loss", swav_loss, on_epoch=True, sync_dist=True)
 
-        else:
-            out = super().training_step(batch, batch_idx)
-            feats = torch.stack(out["feats"])
-            
-            z = self.projector(feats)
-            z_norm = F.normalize(z)
-            
-            p = self.prototypes(z_norm)
-
-            preds = [p_ for p_ in p]
-            assignments = self.get_assignments(preds[:self.num_crops])
-
-            swav_loss = swav_loss_func_mc(preds, assignments, self.temperature)
-
-            if self.queue_size > 0:
-                self.queue[:, z.size(1) :] = self.queue[:, : -z.size(1)].clone()
-                self.queue[:, : z.size(1)] = z.detach()
-
-            self.log("train_swav_loss", swav_loss, on_epoch=True, sync_dist=True)
-        
-            out.update({"loss": out["loss"] + swav_loss, "z": [z_ for z_ in z], "p": preds})
-            return out
+        out.update({"loss": out["loss"] + swav_loss, "z": [z1, z2], "p": [p1, p2]})
+        return out
 
     def on_after_backward(self):
         """Zeroes the gradients of the prototypes."""

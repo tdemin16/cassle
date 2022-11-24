@@ -12,7 +12,6 @@ from cassle.utils.dali_dataloader import (
     ImagenetTransform,
     DigitsTransform,
     MulticropPretrainPipeline,
-    MulticropPretrainPipeline2,
     NormalPipeline,
     DigitsPipeline,
     PretrainPipeline,
@@ -169,10 +168,9 @@ class PretrainABC(ABC):
                     size=size,
                     min_scale=min_scale,
                     max_scale=max_scale,
-                    curr_stage=self.curr_stage
                 )
                 transforms.append(transform)
-            train_pipeline = MulticropPretrainPipeline2(
+            train_pipeline = MulticropPretrainPipeline(
                 data_dir,
                 batch_size=self.batch_size,
                 transforms=transforms,
@@ -184,13 +182,6 @@ class PretrainABC(ABC):
                 num_threads=num_workers,
                 no_labels=self.extra_args["no_labels"],
                 encode_indexes_into_labels=self.encode_indexes_into_labels,
-                split_strategy=self.split_strategy,
-                tasks=self.tasks,
-                task_idx=self.current_task_idx,
-                num_tasks=self.num_tasks,
-                dataset=dataset,
-                domain=self.domains[self.current_task_idx],
-                train_test="train",
             )
             output_map = [
                 *[f"large{i}" for i in range(num_crops[0])],
@@ -205,7 +196,6 @@ class PretrainABC(ABC):
                         device=dali_device,
                         **kwargs,
                         max_scale=1.0,
-                        curr_stage=self.curr_stage
                     )
                     for kwargs in transform_kwargs
                 ]
@@ -214,7 +204,6 @@ class PretrainABC(ABC):
                     device=dali_device,
                     **transform_kwargs,
                     max_scale=1.0,
-                    curr_stage=self.curr_stage
                 )
 
             train_pipeline = PretrainPipeline(

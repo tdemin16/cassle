@@ -171,8 +171,7 @@ def main():
     # wandb logging
     if args.wandb:
         arch = "" if not args.tiny_architecture else "-smallarch"
-        curr = "" if not args.curriculum else "-curriculum"
-        wandb_name = f"{args.name}-{args.size}{arch}{curr}-task{args.task_idx}"
+        wandb_name = f"{args.name}-{args.size}{arch}-task{args.task_idx}"
         wandb_logger = WandbLogger(
             name=wandb_name,
             project=args.project,
@@ -220,25 +219,10 @@ def main():
     model.current_task_idx = args.task_idx
 
     start_time = time()
-    if not args.curriculum:
-        if args.dali:
-            trainer.fit(model, val_dataloaders=val_loader)
-        else:
-            trainer.fit(model, train_loaders, val_loader)
-    
-    elif args.curriculum and args.dali:
-        print("[CaSSLe - Curriculum Learning]")
-        max_ep = model.max_epochs
-        curr_schedule = [30, 35, 35]
-
-        # Assign number of epochs proportional to schedule
-        ep_schedule = [sch * max_ep // 100 for sch in curr_schedule]
-        ep_schedule[-1] += max_ep - sum(ep_schedule)
-
-        model.ep_schedule = ep_schedule
-        model.initial_stage()
-
+    if args.dali:
         trainer.fit(model, val_dataloaders=val_loader)
+    else:
+        trainer.fit(model, train_loaders, val_loader)
 
     print(f"Training Lasted: {time() - start_time}")
 

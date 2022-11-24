@@ -19,11 +19,6 @@ def base_distill_wrapper(Method=object):
             if self.current_task_idx > 0:
 
                 self.frozen_encoder = deepcopy(self.encoder)
-                
-                # retrieve backupped weights for curriculum learning
-                if self.ep_schedule is not None:
-                    self._copy_encoder_curriculum()
-
                 self.frozen_projector = deepcopy(self.projector)
 
                 for pg in self.frozen_encoder.parameters():
@@ -48,17 +43,5 @@ def base_distill_wrapper(Method=object):
                 {"frozen_feats": [frozen_feats1, frozen_feats2], "frozen_z": [frozen_z1, frozen_z2]}
             )
             return out
-
-        def _copy_encoder_curriculum(self):
-            """
-            Makes a full copy of the encoder taking into account also backupped layers.
-            """
-            self.frozen_encoder.layer3 = deepcopy(self.backup_layer3)
-            
-            if self.tiny_architecture:
-                self.frozen_encoder.layer2 = deepcopy(self.backup_layer2)
-            else:
-                self.frozen_encoder.layer4 = deepcopy(self.backup_layer4)
-
 
     return BaseDistillWrapper

@@ -30,20 +30,13 @@ class SimCLR(BaseModel):
 
         self.temperature = temperature
         self.supervised = supervised
-        self.proj_hidden_dim = proj_hidden_dim
 
         # projector
         self.projector = nn.Sequential(
-            nn.Linear(self.features_dim, self.proj_hidden_dim),
+            nn.Linear(self.features_dim, proj_hidden_dim),
             nn.ReLU(),
-            nn.Linear(self.proj_hidden_dim, output_dim),
+            nn.Linear(proj_hidden_dim, output_dim),
         )
-
-        if self.ep_schedule is not None:
-            in_features = 64 if self.tiny_architecture else 128
-            self.stage_0_proj = nn.Linear(in_features, self.proj_hidden_dim)
-            self.stage_1_proj = nn.Linear(in_features*2, self.proj_hidden_dim)
-            self.stage_2_proj = self.projector[0]
 
     @staticmethod
     def add_model_specific_args(parent_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -68,27 +61,8 @@ class SimCLR(BaseModel):
         Returns:
             List[dict]: list of learnable parameters.
         """
-        if self.ep_schedule is not None:
-            extra_learnable_params = [
-                {"name": "stage.0."+name, "params": params} \
-                for name, params in self.stage_0_proj.named_parameters()
-            ]
-            extra_learnable_params.extend([
-                {"name": "stage.1."+name, "params": params} \
-                for name, params in self.stage_1_proj.named_parameters()
-            ])
-            extra_learnable_params.extend([
-                {"name": "stage.2."+name, "params": params} \
-                for name, params in self.stage_2_proj.named_parameters()
-            ])
-            extra_learnable_params.extend([
-                {"name": "projector."+name, "params": params} \
-                for name, params in self.projector[2].named_parameters()
-            ])
-            
-        else:
-            extra_learnable_params = [{"params": self.projector.parameters()}]
 
+        extra_learnable_params = [{"params": self.projector.parameters()}]
         return super().learnable_params + extra_learnable_params
 
     def forward(self, X: torch.tensor, *args, **kwargs) -> Dict[str, Any]:
@@ -178,8 +152,6 @@ class SimCLR(BaseModel):
             else:
                 nce_loss = simclr_loss_func(z1, z2, temperature=self.temperature)
 
-            z = [z1, z2]
-
         # compute number of extra positives
         n_positives = (
             (pos_mask != 0).sum().float()
@@ -193,20 +165,5 @@ class SimCLR(BaseModel):
         }
         self.log_dict(metrics, on_epoch=True, sync_dist=True)
 
-        out.update({"loss": out["loss"] + nce_loss, "z": z})
+        out.update({"loss": out["loss"] + nce_loss, "z": [z1, z2]})
         return out
-
-    
-    def initial_stage(self):
-        super().initial_stage()
-        self.projector[0] = self.stage_0_proj
-
-
-    def next_stage(self):
-        super().next_stage()
-        if self.curr_stage == 1:
-            self.projector[0] = self.stage_1_proj
-            self._set_lr("stage.1", self.lr)
-        else:
-            self.projector[0] = self.stage_2_proj
-            self._set_lr("stage.2", self.lr)

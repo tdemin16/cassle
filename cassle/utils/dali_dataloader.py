@@ -470,7 +470,6 @@ class ImagenetTransform:
         size: int = 224,
         min_scale: float = 0.08,
         max_scale: float = 1.0,
-        curr_stage: int = 2
     ):
         """Applies Imagenet transformations to a batch of images.
 
@@ -488,8 +487,6 @@ class ImagenetTransform:
             min_scale (float, optional): minimum scale of the crops. Defaults to 0.08.
             max_scale (float, optional): maximum scale of the crops. Defaults to 1.0.
         """
-        assert curr_stage in [0, 1, 2]
-        self.curr_stage = curr_stage
 
         # random crop
         self.random_crop = ops.RandomResizedCrop(
@@ -543,15 +540,10 @@ class ImagenetTransform:
 
     def __call__(self, images):
         out = self.random_crop(images)
-        
-        if self.curr_stage >= 1:
-            out = self.random_color_jitter(out)
-            out = self.random_grayscale(out)
-        
-        if self.curr_stage == 2:
-            out = self.random_gaussian_blur(out)
-            out = self.random_solarization(out)
-
+        out = self.random_color_jitter(out)
+        out = self.random_grayscale(out)
+        out = self.random_gaussian_blur(out)
+        out = self.random_solarization(out)
         out = self.cmn(out, mirror=self.coin05())
         return out
 
@@ -569,7 +561,6 @@ class DigitsTransform:
         size: int = 32,
         min_scale: float = 0.08,
         max_scale: float = 1.0,
-        curr_stage: int = 2
     ):
         """Applies Imagenet transformations to a batch of images.
 
@@ -642,15 +633,10 @@ class DigitsTransform:
 
     def __call__(self, images):
         out = self.random_crop(images)
-        
-        if self.curr_stage >= 1:
-            out = self.random_color_jitter(out)
-            out = self.random_grayscale(out)
-        
-        if self.curr_stage == 2:
-            out = self.random_gaussian_blur(out)
-            out = self.random_solarization(out)
-
+        out = self.random_color_jitter(out)
+        out = self.random_grayscale(out)
+        out = self.random_gaussian_blur(out)
+        out = self.random_solarization(out)
         out = self.cmn(out, mirror=self.coin05())
         return out
 
@@ -1073,157 +1059,3 @@ class MulticropPretrainPipeline(Pipeline):
         labels = self.to_int64(labels)
 
         return (*crops, labels)
-
-
-class MulticropPretrainPipeline2(Pipeline):
-    def __init__(
-        self,
-        data_path: Union[str, Path],
-        batch_size: int,
-        device: str,
-        transforms: List,
-        task_idx: List[int],
-        num_tasks: int,
-        train_test: str,
-        split_strategy: str,
-        dataset: str,
-        tasks: list = None,
-        domain: str = None,
-        num_crops: int = 2,
-        random_shuffle: bool = True,
-        device_id: int = 0,
-        shard_id: int = 0,
-        num_shards: int = 1,
-        num_threads: int = 4,
-        seed: int = 12,
-        no_labels: bool = False,
-        encode_indexes_into_labels: bool = False,
-    ):
-        """TODO: DOCSTRING"""
-        
-        seed += device_id
-        super().__init__(
-            batch_size=batch_size, num_threads=num_threads, device_id=device_id, seed=seed,
-        )
-
-        self.device = device
-
-        data_path = Path(data_path)
-
-        #TODO: Add test on no_labels
-        #TODO: Add else clause
-        if no_labels:
-            raise NotImplementedError
-        elif dataset == "domainnet" or dataset == "officehome" or dataset == "digits":
-            data = []
-            domain_files = [
-                data_path / f
-                for f in os.listdir(data_path)
-                if f.endswith(".txt") and train_test in f
-            ]
-            if domain is None:
-                for df in domain_files:
-                    with open(df, "r") as df:
-                        domain_data = [l.split() for l in df.readlines()]
-                        domain_data = [(data_path / p, l) for p, l in domain_data]
-                        data.extend(domain_data)
-            else:
-                domain_file = data_path / f"{domain}_{train_test}.txt"
-                assert domain_file in domain_files
-                with open(domain_file, "r") as df:
-                    domain_data = [l.split() for l in df.readlines()]
-                    domain_data = [(data_path / p, l) for p, l in domain_data]
-                    data.extend(domain_data)
-        else:
-            raise NotImplementedError
-        
-        # split data according to split strategy
-        if split_strategy is None:
-            pass  # online eval
-        elif split_strategy == "class": #! Not tested
-            data = [(f, l) for f, l in data if l in tasks[task_idx]]
-        elif split_strategy == "data": #! Not tested
-            assert tasks is None
-            lengths = [len(data) // num_tasks] * num_tasks
-            lengths[0] += len(data) - sum(lengths)
-            data = list(
-                torch.utils.data.random_split(
-                    data, lengths, generator=torch.Generator().manual_seed(42)
-                )[task_idx]
-            )
-        elif split_strategy == "domain":
-            pass  # already handled above
-        else:
-            raise ValueError
-
-        # collect files and labels
-        files, labels = map(list, zip(*data))
-
-        # if indices are required, we encode them into the labels and decode after loading
-        # otherwise we just pass the labels to the reader
-        if encode_indexes_into_labels: #! Not tested
-            labels = []
-            true_labels = []  # for debugging
-
-            self.conversion_map = []
-            for file_idx, (_, label_idx) in enumerate(data):
-                labels.append(file_idx)
-                true_labels.append(label_idx)
-                self.conversion_map.append(label_idx)
-
-            # debugging
-            for _, file_idx, label_idx in zip(files, labels, true_labels):
-                assert self.conversion_map[file_idx] == label_idx
-
-            self.reader = ops.readers.File(
-                files=files,
-                shard_id=shard_id,
-                num_shards=num_shards,
-                shuffle_after_epoch=random_shuffle,
-            )
-        else:
-            self.reader = ops.readers.File(
-                files=files,
-                shard_id=shard_id,
-                num_shards=num_shards,
-                shuffle_after_epoch=random_shuffle,
-                labels=labels,
-            )
-        
-        decoder_device = "mixed" if self.device == "gpu" else "cpu"
-        device_memory_padding = 211025920 if decoder_device == "mixed" else 0
-        host_memory_padding = 140544512 if decoder_device == "mixed" else 0
-        self.decode = ops.decoders.Image(
-            device=decoder_device,
-            output_type=types.RGB,
-            device_memory_padding=device_memory_padding,
-            host_memory_padding=host_memory_padding,
-        )
-        self.to_int64 = ops.Cast(dtype=types.INT64, device=device)
-
-        self.num_crops = num_crops
-
-        # transformations
-        self.transforms = transforms
-
-    def define_graph(self):
-        """Defines the computational graph for dali operations."""
-        
-        # read images from memory
-        inputs, labels = self.reader(name="Reader")
-        images = self.decode(inputs)
-
-        # crop into large and small images
-        crops = []
-        for i, transform in enumerate(self.transforms):
-            for _ in range(self.num_crops[i]):
-                crop = transform(images)
-                crops.append(crop)
-        
-        if self.device == "gpu":
-            labels = labels.gpu()
-        # PyTorch expects labels as INT64
-        labels = self.to_int64(labels)
-
-        return (*crops, labels)
-        

@@ -326,6 +326,7 @@ def prepare_data(
     Returns:
         Tuple[DataLoader, DataLoader]: prepared training and validation dataloader;.
     """
+
     T_train, T_val = prepare_transforms(dataset)
     train_dataset, val_dataset = prepare_datasets(
         dataset,

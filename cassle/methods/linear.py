@@ -61,7 +61,6 @@ class LinearModel(pl.LightningModule):
         super().__init__()
 
         self.backbone = backbone
-
         self.classifier = nn.Linear(self.backbone.inplanes, num_classes)  # type: ignore
 
         # training related
