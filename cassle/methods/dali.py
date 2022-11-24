@@ -10,9 +10,11 @@ from cassle.utils.dali_dataloader import (
     CustomNormalPipeline,
     CustomTransform,
     ImagenetTransform,
+    DigitsTransform,
     MulticropPretrainPipeline,
     MulticropPretrainPipeline2,
     NormalPipeline,
+    DigitsPipeline,
     PretrainPipeline,
 )
 from nvidia.dali.plugin.pytorch import DALIGenericIterator, LastBatchPolicy
@@ -144,8 +146,10 @@ class PretrainABC(ABC):
 
         # handle custom data by creating the needed pipeline
         dataset = self.extra_args["dataset"]
-        if dataset in ["imagenet100", "imagenet", "domainnet", "officehome", "digits"]:
+        if dataset in ["imagenet100", "imagenet", "domainnet", "officehome"]:
             transform_pipeline = ImagenetTransform
+        elif dataset == "digits":
+            transform_pipeline = DigitsTransform
         elif dataset == "custom":
             transform_pipeline = CustomTransform
         else:
@@ -279,8 +283,10 @@ class ClassificationABC(ABC):
 
         # handle custom data by creating the needed pipeline
         dataset = self.extra_args["dataset"]
-        if dataset in ["imagenet100", "imagenet", "domainnet", "officehome", "digits"]:
+        if dataset in ["imagenet100", "imagenet", "domainnet", "officehome"]:
             pipeline_class = NormalPipeline
+        elif dataset == "digits":
+            pipeline_class = DigitsPipeline
         elif dataset == "custom":
             pipeline_class = CustomNormalPipeline
         else:

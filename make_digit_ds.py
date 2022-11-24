@@ -31,7 +31,7 @@ def make_dataset(ds, train):
         
         path = f"datasets/digits/{ds}/{'train' if train else 'val'}/{label}/{str(counter).zfill(4)}.jpg"
         make_if_needed(os.path.join(*(path.split('/')[:-1])))
-        association.append((path, label))
+        association.append((os.path.join(*(path.split('/')[2:])), label))
         image.save(path)
 
         counter += 1

@@ -18,6 +18,7 @@ def dataset_args(parser: ArgumentParser):
         "domainnet",
         "custom",
         "officehome",
+        "digits"
     ]
 
     parser.add_argument("--dataset", choices=SUPPORTED_DATASETS, type=str, required=True)

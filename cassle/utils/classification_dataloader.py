@@ -8,7 +8,7 @@ from torch import nn
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from torchvision.datasets import STL10, ImageFolder
-from cassle.utils.datasets import DomainNetDataset, OfficeHomeDataset
+from cassle.utils.datasets import DomainNetDataset, OfficeHomeDataset, DigitsDataset
 from sklearn.model_selection import train_test_split
 
 
@@ -60,6 +60,7 @@ def prepare_transforms(dataset: str) -> Tuple[nn.Module, nn.Module]:
         ),
         "T_val": transforms.Compose(
             [
+                transforms.Resize((32, 32)),
                 transforms.ToTensor(),
                 transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
             ]
@@ -113,6 +114,7 @@ def prepare_transforms(dataset: str) -> Tuple[nn.Module, nn.Module]:
         "imagenet": imagenet_pipeline,
         "domainnet": imagenet_pipeline,
         "officehome": imagenet_pipeline,
+        "digits": cifar_pipeline,
         "custom": custom_pipeline,
     }
 
@@ -172,6 +174,7 @@ def prepare_datasets(
         "imagenet100",
         "domainnet",
         "officehome",
+        "digits",
         "custom",
     ]
 
@@ -238,6 +241,22 @@ def prepare_datasets(
             transform=T_train,
         )
         val_dataset = OfficeHomeDataset(
+            data_root=data_dir,
+            image_list_root=data_dir,
+            domain_names=None,
+            split="val",
+            transform=T_val,
+            return_domain=True,
+        )
+    elif dataset == "digits":
+        train_dataset = DigitsDataset(
+            data_root=data_dir,
+            image_list_root=data_dir,
+            domain_names=train_domain,
+            split="train",
+            transform=T_train,
+        )
+        val_dataset = DigitsDataset(
             data_root=data_dir,
             image_list_root=data_dir,
             domain_names=None,
