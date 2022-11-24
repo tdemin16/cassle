@@ -136,6 +136,12 @@ class BaseModel(pl.LightningModule):
                 "product",
                 "real_world"
             ]
+        elif "dataset" in kwargs.keys() and kwargs["dataset"] == "digits":
+            self.domains = [
+                "svhn",
+                "usps",
+                "mnist"
+            ]
         else:
             self.domains = [
                 "real",
