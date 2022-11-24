@@ -171,8 +171,7 @@ def main():
     # wandb logging
     if args.wandb:
         arch = "" if not args.tiny_architecture else "-smallarch"
-        wandb_size = "" if args.tiny_size == -1 else f"-{args.tiny_size}"
-        wandb_name = f"{args.name}{wandb_size}{arch}-task{args.task_idx}"
+        wandb_name = f"{args.name}-{args.size}{arch}-task{args.task_idx}"
         wandb_logger = WandbLogger(
             name=wandb_name,
             project=args.project,
@@ -210,6 +209,7 @@ def main():
 
     trainer = Trainer.from_argparse_args(
         args,
+        accumulate_grad_batches={0: 1, 10: 2},
         logger=wandb_logger if args.wandb else None,
         callbacks=callbacks,
         checkpoint_callback=False,
@@ -219,7 +219,6 @@ def main():
     model.current_task_idx = args.task_idx
 
     start_time = time()
-
     if args.dali:
         trainer.fit(model, val_dataloaders=val_loader)
     else:

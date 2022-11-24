@@ -61,11 +61,6 @@ class LinearModel(pl.LightningModule):
         super().__init__()
 
         self.backbone = backbone
-        if kwargs["tiny"] == "omit4":
-            print("[Tiny CaSSLe - Omit layer 4]")
-            self.backbone.layer4 = nn.Identity()
-            self.backbone.inplanes = self.backbone.inplanes // 2
-
         self.classifier = nn.Linear(self.backbone.inplanes, num_classes)  # type: ignore
 
         # training related
@@ -90,6 +85,12 @@ class LinearModel(pl.LightningModule):
                 "product",
                 "real_world"
             ]
+        elif "dataset" in kwargs.keys() and kwargs["dataset"] == "digits":
+            self.domains = [
+                "svhn",
+                "usps",
+                "mnist"
+            ]
         else:
             self.domains = [
                 "real",
@@ -105,6 +106,8 @@ class LinearModel(pl.LightningModule):
 
         if self.extra_args["tiny"] == "train4":
             print("[Tiny CaSSLe - Train layer 4]")
+        elif self.extra_args["tiny"] == "omit4":
+            print("[Tiny CaSSLe - Omit layer 4]")
 
         # Freeze param. If tiny and layer4, leave them active
         for name, param in self.backbone.named_parameters():

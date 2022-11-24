@@ -301,6 +301,153 @@ class NormalPipeline(Pipeline):
         return (images, labels)
 
 
+class DigitsPipeline(Pipeline):
+    def __init__(
+        self,
+        data_path: str,
+        batch_size: int,
+        device: str,
+        dataset: str,
+        validation: bool = False,
+        device_id: int = 0,
+        shard_id: int = 0,
+        num_shards: int = 1,
+        num_threads: int = 4,
+        seed: int = 12,
+        domain: str = None,
+    ):
+        """Initializes the pipeline for validation or linear eval training.
+
+        If validation is set to True then images will only be resized to 32px and center cropped
+        to 32px, otherwise random resized crop, horizontal flip are applied. In both cases images
+        are normalized.
+
+        Args:
+            data_path (str): directory that contains the data.
+            batch_size (int): batch size.
+            device (str): device on which the operation will be performed.
+            validation (bool): whether it is validation or training. Defaults to False. Defaults to
+                False.
+            device_id (int): id of the device used to initialize the seed and for parent class.
+                Defaults to 0.
+            shard_id (int): id of the shard (chuck of samples). Defaults to 0.
+            num_shards (int): total number of shards. Defaults to 1.
+            num_threads (int): number of threads to run in parallel. Defaults to 4.
+            seed (int): seed for random number generation. Defaults to 12.
+        """
+
+        seed += device_id
+        super().__init__(batch_size, num_threads, device_id, seed)
+
+        self.device = device
+        self.validation = validation
+
+        if dataset == "digits":
+            data = []
+            domain_files = [
+                data_path / f for f in os.listdir(data_path) if f.endswith(".txt") and "train" in f
+            ]
+            if domain is None:
+                for df in domain_files:
+                    with open(df, "r") as df:
+                        domain_data = [l.split() for l in df.readlines()]
+                        domain_data = [(data_path / p, l) for p, l in domain_data]
+                        data.extend(domain_data)
+            else:
+                domain_file = data_path / f"{domain}_train.txt"
+                assert domain_file in domain_files
+                with open(domain_file, "r") as df:
+                    domain_data = [l.split() for l in df.readlines()]
+                    domain_data = [(data_path / p, l) for p, l in domain_data]
+                    data.extend(domain_data)
+
+            # collect files and labels
+            files, labels = map(list, zip(*data))
+
+            self.reader = ops.readers.File(
+                files=files,
+                shard_id=shard_id,
+                num_shards=num_shards,
+                shuffle_after_epoch=True if not self.validation else False,
+                labels=labels,
+            )
+
+        else:
+            self.reader = ops.readers.File(
+                file_root=data_path,
+                shard_id=shard_id,
+                num_shards=num_shards,
+                shuffle_after_epoch=True if not self.validation else False,
+            )
+
+        decoder_device = "mixed" if self.device == "gpu" else "cpu"
+        device_memory_padding = 211025920 if decoder_device == "mixed" else 0
+        host_memory_padding = 140544512 if decoder_device == "mixed" else 0
+        self.decode = ops.decoders.Image(
+            device=decoder_device,
+            output_type=types.RGB,
+            device_memory_padding=device_memory_padding,
+            host_memory_padding=host_memory_padding,
+        )
+
+        # crop operations
+        if self.validation:
+            self.resize = ops.Resize(
+                device=self.device, resize_shorter=32, interp_type=types.INTERP_CUBIC,
+            )
+            # center crop and normalize
+            self.cmn = ops.CropMirrorNormalize(
+                device=self.device,
+                dtype=types.FLOAT,
+                output_layout=types.NCHW,
+                crop=(32, 32),
+                mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
+                std=[0.228 * 255, 0.224 * 255, 0.225 * 255],
+            )
+        else:
+            self.resize = ops.RandomResizedCrop(
+                device=self.device,
+                size=32,
+                random_area=(0.08, 1.0),
+                interp_type=types.INTERP_CUBIC,
+            )
+            # normalize and horizontal flip
+            self.cmn = ops.CropMirrorNormalize(
+                device=self.device,
+                dtype=types.FLOAT,
+                output_layout=types.NCHW,
+                mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
+                std=[0.228 * 255, 0.224 * 255, 0.225 * 255],
+            )
+
+        self.coin05 = ops.random.CoinFlip(probability=0.5)
+        self.to_int64 = ops.Cast(dtype=types.INT64, device=device)
+
+    def define_graph(self):
+        """Defines the computational graph for dali operations."""
+
+        # read images from memory
+        inputs, labels = self.reader(name="Reader")
+        images = self.decode(inputs)
+
+        # crop into large and small images
+        images = self.resize(images)
+
+        if self.validation:
+            # crop and normalize
+            images = self.cmn(images)
+        else:
+            # normalize and maybe apply horizontal flip with 0.5 chance
+            images = self.cmn(images, mirror=self.coin05())
+
+        if self.device == "gpu":
+            labels = labels.gpu()
+        # PyTorch expects labels as INT64
+        labels = self.to_int64(labels)
+
+        return (images, labels)
+
+
 class CustomNormalPipeline(NormalPipeline):
     """Initializes the custom pipeline for validation or linear eval training.
     This acts as a placeholder and behaves exactly like NormalPipeline.
@@ -323,7 +470,6 @@ class ImagenetTransform:
         size: int = 224,
         min_scale: float = 0.08,
         max_scale: float = 1.0,
-        extra_args: dict = None
     ):
         """Applies Imagenet transformations to a batch of images.
 
@@ -341,15 +487,104 @@ class ImagenetTransform:
             min_scale (float, optional): minimum scale of the crops. Defaults to 0.08.
             max_scale (float, optional): maximum scale of the crops. Defaults to 1.0.
         """
-        # tiny cassle
-        if extra_args is not None and extra_args["tiny_size"] != -1:
-            print(f"[Tiny CaSSLe - Size {extra_args['tiny_size']}]")
-            size = extra_args["tiny_size"]
 
         # random crop
         self.random_crop = ops.RandomResizedCrop(
             device=device,
             size=size,
+            random_area=(min_scale, max_scale),
+            interp_type=types.INTERP_CUBIC,
+        )
+
+        # color jitter
+        self.random_color_jitter = RandomColorJitter(
+            brightness=brightness,
+            contrast=contrast,
+            saturation=saturation,
+            hue=hue,
+            prob=0.8,
+            device=device,
+        )
+
+        # grayscale conversion
+        self.random_grayscale = RandomGrayScaleConversion(prob=0.2, device=device)
+
+        # gaussian blur
+        self.random_gaussian_blur = RandomGaussianBlur(prob=gaussian_prob, device=device)
+
+        # solarization
+        self.random_solarization = RandomSolarize(prob=solarization_prob)
+
+        # normalize and horizontal flip
+        self.cmn = ops.CropMirrorNormalize(
+            device=device,
+            dtype=types.FLOAT,
+            output_layout=types.NCHW,
+            mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
+            std=[0.228 * 255, 0.224 * 255, 0.225 * 255],
+        )
+        self.coin05 = ops.random.CoinFlip(probability=0.5)
+
+        self.str = (
+            "ImagenetTransform("
+            f"random_crop({min_scale}, {max_scale}), "
+            f"random_color_jitter(brightness={brightness}, "
+            f"contrast={contrast}, saturation={saturation}, hue={hue}), "
+            f"random_gray_scale, random_gaussian_blur({gaussian_prob}), "
+            f"random_solarization({solarization_prob}), "
+            "crop_mirror_resize())"
+        )
+
+    def __str__(self) -> str:
+        return self.str
+
+    def __call__(self, images):
+        out = self.random_crop(images)
+        out = self.random_color_jitter(out)
+        out = self.random_grayscale(out)
+        out = self.random_gaussian_blur(out)
+        out = self.random_solarization(out)
+        out = self.cmn(out, mirror=self.coin05())
+        return out
+
+
+class DigitsTransform:
+    def __init__(
+        self,
+        device: str,
+        brightness: float,
+        contrast: float,
+        saturation: float,
+        hue: float,
+        gaussian_prob: float = 0.5,
+        solarization_prob: float = 0.0,
+        size: int = 32,
+        min_scale: float = 0.08,
+        max_scale: float = 1.0,
+    ):
+        """Applies Imagenet transformations to a batch of images.
+
+        Args:
+            device (str): device on which the operations will be performed.
+            brightness (float): sampled uniformly in [max(0, 1 - brightness), 1 + brightness].
+            contrast (float): sampled uniformly in [max(0, 1 - contrast), 1 + contrast].
+            saturation (float): sampled uniformly in [max(0, 1 - saturation), 1 + saturation].
+            hue (float): sampled uniformly in [-hue, hue].
+            gaussian_prob (float, optional): probability of applying gaussian blur. Defaults to 0.5.
+            solarization_prob (float, optional): probability of applying solarization. Defaults
+                to 0.0.
+            size (int, optional): size of the side of the image after transformation. Defaults
+                to 224.
+            min_scale (float, optional): minimum scale of the crops. Defaults to 0.08.
+            max_scale (float, optional): maximum scale of the crops. Defaults to 1.0.
+        """
+        assert curr_stage in [0, 1, 2]
+        self.curr_stage = curr_stage
+
+        # random crop
+        self.random_crop = ops.RandomResizedCrop(
+            device=device,
+            size=32,
             random_area=(min_scale, max_scale),
             interp_type=types.INTERP_CUBIC,
         )
@@ -566,7 +801,7 @@ class PretrainPipeline(Pipeline):
             labels = [-1] * len(files)
             data = map(list, zip(files, labels))
 
-        elif dataset == "domainnet" or dataset == "officehome":
+        elif dataset == "domainnet" or dataset == "officehome" or dataset == "digits":
             data = []
             domain_files = [
                 data_path / f

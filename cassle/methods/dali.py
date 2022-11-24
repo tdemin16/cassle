@@ -10,8 +10,10 @@ from cassle.utils.dali_dataloader import (
     CustomNormalPipeline,
     CustomTransform,
     ImagenetTransform,
+    DigitsTransform,
     MulticropPretrainPipeline,
     NormalPipeline,
+    DigitsPipeline,
     PretrainPipeline,
 )
 from nvidia.dali.plugin.pytorch import DALIGenericIterator, LastBatchPolicy
@@ -145,6 +147,8 @@ class PretrainABC(ABC):
         dataset = self.extra_args["dataset"]
         if dataset in ["imagenet100", "imagenet", "domainnet", "officehome"]:
             transform_pipeline = ImagenetTransform
+        elif dataset == "digits":
+            transform_pipeline = DigitsTransform
         elif dataset == "custom":
             transform_pipeline = CustomTransform
         else:
@@ -164,7 +168,6 @@ class PretrainABC(ABC):
                     size=size,
                     min_scale=min_scale,
                     max_scale=max_scale,
-                    extra_args=self.extra_args,
                 )
                 transforms.append(transform)
             train_pipeline = MulticropPretrainPipeline(
@@ -193,7 +196,6 @@ class PretrainABC(ABC):
                         device=dali_device,
                         **kwargs,
                         max_scale=1.0,
-                        extra_args=self.extra_args,
                     )
                     for kwargs in transform_kwargs
                 ]
@@ -202,7 +204,6 @@ class PretrainABC(ABC):
                     device=dali_device,
                     **transform_kwargs,
                     max_scale=1.0,
-                    extra_args=self.extra_args,
                 )
 
             train_pipeline = PretrainPipeline(
@@ -273,6 +274,8 @@ class ClassificationABC(ABC):
         dataset = self.extra_args["dataset"]
         if dataset in ["imagenet100", "imagenet", "domainnet", "officehome"]:
             pipeline_class = NormalPipeline
+        elif dataset == "digits":
+            pipeline_class = DigitsPipeline
         elif dataset == "custom":
             pipeline_class = CustomNormalPipeline
         else:

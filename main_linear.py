@@ -17,6 +17,7 @@ except ImportError:
     _dali_avaliable = False
 else:
     _dali_avaliable = True
+from cassle.methods.custom_resnet import custom_resnet18, custom_resnet50
 from cassle.methods.linear import LinearModel
 from cassle.utils.classification_dataloader import prepare_data
 from cassle.utils.checkpointer import Checkpointer
@@ -34,9 +35,9 @@ def main():
         tasks = torch.randperm(args.num_classes).chunk(args.num_tasks)
 
     if args.encoder == "resnet18":
-        backbone = resnet18()
+        backbone = resnet18() if args.tiny != "omit4" else custom_resnet18()
     elif args.encoder == "resnet50":
-        backbone = resnet50()
+        backbone = resnet50() if args.tiny != "omit4" else custom_resnet18()
     else:
         raise ValueError("Only [resnet18, resnet50] are currently supported.")
 
